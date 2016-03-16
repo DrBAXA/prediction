@@ -59,6 +59,7 @@ public class Convert {
         put(LocalDate.of(2015, 11, 21), 1.0);
         put(LocalDate.of(2015, 12, 13), 1.0);
         put(LocalDate.of(2015, 12, 19), 1.0);
+        put(LocalDate.of(2015, 12, 25), 1.0);
         put(LocalDate.of(2016, 1, 6), 1.0);
         put(LocalDate.of(2016, 1, 7), 1.0);
         put(LocalDate.of(2016, 1, 8), 1.0);
