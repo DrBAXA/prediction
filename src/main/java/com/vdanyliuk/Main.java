@@ -23,6 +23,8 @@ public class Main {
 
     private static UnaryOperator<Double> same = d -> d;
     private static UnaryOperator<Double> signedSquare = d -> Math.abs(d)*d;
+    private static UnaryOperator<Double> cubic = d -> Math.pow(d, 3);
+    private static UnaryOperator<Double> sqrt = d -> Math.sqrt(d);
 
     public static void main(String[] args) throws IOException {
         prepareFiles();
@@ -104,19 +106,39 @@ public class Main {
                 .addParameter(model.getClouds(), signedSquare)
                 .addParameter(model.getDayLightLong(), signedSquare)
                 .addParameter(model.getDewPoint(), signedSquare)
-                //.addParameter(model.getMaxHumidity(), signedSquare)
-                //.addParameter(model.getMaxTemperature(), signedSquare)
-                //.addParameter(model.getMinHumidity(), signedSquare)
-                //.addParameter(model.getMinTemperature(), signedSquare)
+                .addParameter(model.getMaxHumidity(), signedSquare)
+                .addParameter(model.getMaxTemperature(), signedSquare)
+                .addParameter(model.getMinHumidity(), signedSquare)
+                .addParameter(model.getMinTemperature(), signedSquare)
                 .addParameter(model.getPrecipitation(), signedSquare)
                 .addParameter(model.getPressure(), signedSquare)
                 .addParameter(model.getVisibility(), signedSquare)
                 .addParameter(model.getWind(), signedSquare)
 
+                //Cubic weather parameters
+                .addParameter(model.getAstronomicalDayLong(), cubic)
+                .addParameter(model.getAvgHumidity(), cubic)
+                .addParameter(model.getAvgTemperature(), cubic)
+
+
+                //SQRT
+                .addParameter(model.getClouds(), sqrt)
+                .addParameter(model.getDayLightLong(), sqrt)
+                .addParameter(model.getMaxHumidity(), sqrt)
+                .addParameter(model.getPrecipitation(), sqrt)
+                .addParameter(model.getPressure(), sqrt)
+                .addParameter(model.getVisibility(), sqrt)
+                .addParameter(model.getWind(), sqrt)
+
                 //Special parameters
                 .addParameter(isDayLightSaving(model.getDate()), same)
-                .addParameter(model.getAvgTemperature(), d -> Math.pow(d, 3))
-                .addParameter(model.getAvgTemperature()* holidays.state(model.getDate()), d -> -d);
+                .addParameter(model.getAvgTemperature()* holidays.state(model.getDate()), d -> -d)
+                .addParameter(model.getAvgTemperature()* holidays.state(model.getDate()), cubic)
+                .addParameter(model.getAvgTemperature()* holidays.religious(model.getDate()), d -> -d)
+                .addParameter(model.getAvgTemperature()* holidays.religious(model.getDate()), cubic)
+                .addParameter(model.getAstronomicalDayLong()* holidays.religious(model.getDate()), d -> -d)
+                .addParameter(model.getAstronomicalDayLong()* holidays.religious(model.getDate()), cubic)
+                ;
     }
 
     public static double isDayLightSaving(LocalDate date) {
