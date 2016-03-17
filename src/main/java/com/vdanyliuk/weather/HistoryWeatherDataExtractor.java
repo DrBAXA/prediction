@@ -4,9 +4,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.jsoup.nodes.Document;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
+import java.util.Map;
 
-import static com.vdanyliuk.util.ParserUtil.getMinutesValueForCssAndRegex;
-import static com.vdanyliuk.util.ParserUtil.getValueForCssAndRegex;
+import static com.vdanyliuk.util.ParserUtil.*;
 
 @Slf4j
 public class HistoryWeatherDataExtractor {
@@ -19,7 +21,7 @@ public class HistoryWeatherDataExtractor {
         this.date = date;
     }
 
-    public WeatherModel getWeather() {
+    public WeatherModel getWeather(Map<LocalDate, Double> clouds) {
         return WeatherModel.builder()
                 .date(date)
                 .astronomicalDayLong(getAstronomicalDayLong())
@@ -35,7 +37,20 @@ public class HistoryWeatherDataExtractor {
                 .pressure(getPressure())
                 .wind(getWind())
                 .visibility(getVisibility())
+                .sunRiseBeforeWork(getSunRiseBeforeWork())
+                .sunSetBeforeWork(getSunSetBeforeWork())
+                .clouds(clouds.get(date))
                 .build();
+    }
+
+    double getSunRiseBeforeWork() {
+        LocalTime sunRise = getTimeValueForCssAndRegex(document, "div#astronomy-mod.wx-module.simple table tbody tr", "Фактичний час\\s+(\\d{2}:\\d{2})");
+        return ChronoUnit.SECONDS.between(sunRise, LocalTime.of(7,0));
+    }
+
+    double getSunSetBeforeWork() {
+        LocalTime sunSet = getTimeValueForCssAndRegex(document, "div#astronomy-mod.wx-module.simple table tbody tr", "Фактичний час.*\\s+(\\d{2}:\\d{2})\\s+EES?T Цивільні Сутінки");
+        return ChronoUnit.SECONDS.between( LocalTime.of(20,0), sunSet);
     }
 
     double getAstronomicalDayLong() {

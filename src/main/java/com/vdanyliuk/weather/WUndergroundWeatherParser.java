@@ -7,12 +7,12 @@ import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
+import java.io.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.Properties;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Slf4j
@@ -21,48 +21,56 @@ public class WUndergroundWeatherParser implements WeatherParser {
     private final static DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy/MM/dd");
     private final static String DEFAULT_URL = "http://ukrainian.wunderground.com/history/airport/UKLI/${Date}/DailyHistory.html";
 
-    private Writer writer;
-
-    public static void main(String[] args) throws IOException {
-        WUndergroundWeatherParser parser = new WUndergroundWeatherParser();
-        LocalDate date = LocalDate.of(2016, 3, 1);
-        parser.writer = getFileWriter();
-        Stream.iterate(date, d -> d.plusDays(1))
-                .limit(16)
-                .peek(d -> log.info("Date " + d + " done."))
-                .map(parser::getWeather)
-                .map(WeatherModel::toString)
-                .forEach(parser::write);
-
-        parser.writer.close();
-    }
-
-    private void write(String s){
-        try {
-            writer.write(s);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static Writer getFileWriter() {
-        try {
-            return new FileWriter("out.csv");
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
     @Getter
     private Properties properties;
+    private Map<LocalDate, Double> clouds;
+    Map<LocalDate, WeatherModel> cache;
 
-    public WUndergroundWeatherParser() {
+    public WUndergroundWeatherParser(Map<LocalDate, Double> clouds) {
         properties = PropertiesUtil.loadProperties("wunderground.properties");
+        this.clouds = clouds;
+        cache = loadCache();
     }
 
-    public WeatherModel getWeather(LocalDate date) {
-        return getWeather(getWeatherDayPage(date), date);
+    @Override
+    public List<WeatherModel> getWeather(LocalDate startDate, LocalDate endDate) {
+        List<WeatherModel> res =  Stream.iterate(startDate, d -> d.plusDays(1))
+                .limit(ChronoUnit.DAYS.between(startDate, endDate))
+                .filter(d -> clouds.containsKey(d))
+                .map(d -> Optional.ofNullable(cache.get(d))
+                        .orElseGet(() -> getWeather(getWeatherDayPage(d), d)))
+                //.peek(d -> log.info("Date " + d.getDate() + " done."))
+                .collect(Collectors.toList());
+
+        saveCache(res.stream().collect(HashMap::new, (m, wm) -> m.put(wm.getDate(), wm), Map::putAll));
+
+        return res;
+    }
+
+    private void saveCache(Map<LocalDate, WeatherModel> cache) {
+        try(OutputStream outputStream = new FileOutputStream("data/cache.dat");
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream)) {
+
+            this.cache.putAll(cache);
+            objectOutputStream.writeObject(this.cache);
+
+        } catch (IOException e) {
+            log.error("Can't save cache.");
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<LocalDate, WeatherModel> loadCache() {
+        try(InputStream inputStream = new FileInputStream("data/cache.dat");
+            ObjectInputStream objectInputStream = new ObjectInputStream(inputStream)) {
+
+            Map<LocalDate, WeatherModel> res =  (Map<LocalDate, WeatherModel>) objectInputStream.readObject();
+            return Optional.ofNullable(res).orElseGet(HashMap::new);
+
+        } catch (IOException | ClassNotFoundException e) {
+            log.error("Can't load cache.");
+            return new HashMap<>();
+        }
     }
 
     Document getWeatherDayPage(LocalDate date) {
@@ -70,7 +78,7 @@ public class WUndergroundWeatherParser implements WeatherParser {
     }
 
     WeatherModel getWeather(Document document, LocalDate date) {
-        return new HistoryWeatherDataExtractor(document, date).getWeather();
+        return new HistoryWeatherDataExtractor(document, date).getWeather(clouds);
     }
 
     private Document getWeatherDayPage(LocalDate date, int tryCount) {

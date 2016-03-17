@@ -1,8 +1,9 @@
 package com.vdanyliuk.weather;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public interface WeatherParser {
 
-    WeatherModel getWeather(LocalDate date);
+    List<WeatherModel> getWeather(LocalDate date, LocalDate date1);
 }

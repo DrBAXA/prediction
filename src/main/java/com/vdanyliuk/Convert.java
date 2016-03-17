@@ -73,26 +73,10 @@ public class Convert {
     }};
 
     public static void main(String[] args) throws IOException {
-        Map<LocalDate, Integer> load = Files.lines(Paths.get("load.csv"))
-                .map(l -> l.split(","))
-                .collect(HashMap<LocalDate, Integer>::new, (m, a) -> m.put(LocalDate.parse(a[0], F2), Integer.valueOf(a[1])), HashMap::putAll);
-
-
-        Map<LocalDate, Average> clouds = new HashMap<>();
-        Files.lines(Paths.get("w.csv"))
-                .map(l -> l.split(";"))
-                .forEach(a -> clouds.compute(LocalDate.parse(a[0], F2), (d, av) -> av == null ? new Average() : av.add(Double.parseDouble(a[1]))));
-
-        Map<LocalDate, String> wether = normalizeWeather();
-
-        Files.write(Paths.get("out.csv.temp"), wether.keySet().stream().sorted()
-                .filter(load::containsKey)
-                .map(d -> load.get(d) + "," + clouds.get(d) + "," + getREloyHolidays(d) + "," + getDayOfWeekValue(d) + "," + isDayLightSaving(d) + "," +wether.get(d))
-                .collect(Collectors.toList()));
 
         Files.write(Paths.get("out.csv"), Files.lines(Paths.get("out.csv.temp"))
                 .map(l -> l.split(","))
-                .map(a -> String.join(",", a) + "," + tripleTemp(a) + "," + addSquare(a) + "," + -(Double.parseDouble(a[3]))*Double.parseDouble(a[16]))
+                .map(a -> String.join(",", a) + "," + tripleTemp(a) + "," + addSquare(a) + "," + -(Double.parseDouble(a[5]))*Double.parseDouble(a[16]))
                 .collect(Collectors.toList()));
     }
 
@@ -101,7 +85,7 @@ public class Convert {
     }
 
     private static String tripleTemp(String[] a) {
-        return Stream.of(a[3]).skip(1).mapToDouble(Double::valueOf).map(d -> Math.pow(d, 3)).mapToObj(d -> "" + d).collect(Collectors.joining(","));
+        return Stream.of(a[5]).mapToDouble(Double::valueOf).map(d -> Math.pow(d, 3)).mapToObj(d -> "" + d).collect(Collectors.joining(","));
     }
 
     private static class Average {
@@ -127,9 +111,6 @@ public class Convert {
         return Optional.ofNullable(RELIGIOUS_HOLIDAYS.get(date)).map(d -> d*-80).orElse(0.0);
     }
 
-    public static double isDayLightSaving(LocalDate date) {
-        return ZoneId.systemDefault().getRules().isDaylightSavings(Instant.from(date.atTime(LocalTime.MIDNIGHT).atOffset(ZoneOffset.UTC))) ? 1 : 0;
-    }
 
     public static double getDayOfWeekValue(LocalDate localDate){
         if(STATE_HOLIDAYS.containsKey(localDate)) return -100;

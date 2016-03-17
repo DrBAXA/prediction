@@ -3,6 +3,9 @@ package com.vdanyliuk.util;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.nodes.Document;
 
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalQueries;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -16,6 +19,19 @@ public class ParserUtil {
             return matcher.group(groupNumber).trim();
         } else {
             throw new PatternMatchingException("Pattern " + patternString + " doesn't match any data in string " + src);
+        }
+    }
+
+    public static LocalTime getTimeValueForCssAndRegex(Document document, String cssPath, String regex) {
+        try {
+            String textRepresentation = getStringByPattern(document.select(cssPath).text(), regex, 1);
+            return DateTimeFormatter.ofPattern("kk:mm").parse(textRepresentation).query(TemporalQueries.localTime());
+        } catch (PatternMatchingException patternMatchingException) {
+            log.warn("Can't get value for page url " + document.location() +
+                    "\n\t\t\tCSSPath " + cssPath +
+                    "\n\t\t\tRegex " + regex +
+                    "\n\t\t\tZero will be returned.");
+            return LocalTime.MIDNIGHT;
         }
     }
 

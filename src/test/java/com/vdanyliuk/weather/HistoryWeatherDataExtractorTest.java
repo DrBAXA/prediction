@@ -1,9 +1,6 @@
 package com.vdanyliuk.weather;
 
 import org.junit.Before;
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
 
 public class HistoryWeatherDataExtractorTest {
 
@@ -30,8 +27,8 @@ public class HistoryWeatherDataExtractorTest {
         extractor = new HistoryWeatherDataExtractor(WUndergroundWeatherParserTest.DOCUMENT, WUndergroundWeatherParserTest.TEST_DATE);
     }
 
-    @Test
+/*    @Test
     public void testGetWeather() throws Exception {
         assertEquals(WEATHER_MODEL, extractor.getWeather());
-    }
+    }*/
 }

@@ -3,12 +3,13 @@ package com.vdanyliuk.weather;
 import lombok.Builder;
 import lombok.Data;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 @Data
 @Builder
-public class WeatherModel {
+public class WeatherModel implements Serializable{
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy.MM.dd");
     private LocalDate date;
@@ -34,6 +35,11 @@ public class WeatherModel {
     private double astronomicalDayLong;
     private double dayLightLong;
 
+    private double sunRiseBeforeWork;
+    private double sunSetBeforeWork;
+
+    private double clouds;
+
     @Override
     public String toString() {
         return        FORMATTER.format(date) +
@@ -49,6 +55,9 @@ public class WeatherModel {
                 "," + wind +
                 "," + visibility +
                 "," + astronomicalDayLong +
-                "," + dayLightLong;
+                "," + dayLightLong +
+                "," + sunRiseBeforeWork +
+                "," + sunSetBeforeWork +
+                "," + clouds;
     }
 }
