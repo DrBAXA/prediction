@@ -44,6 +44,7 @@ public class Holidays {
     }};
 
     private static final Map<LocalDate, Double> RELIGIOUS_HOLIDAYS = new HashMap<LocalDate, Double>(){{
+        put(LocalDate.of(2015, 3, 30), 1.0);
         put(LocalDate.of(2015, 4, 7), 2.0);
         put(LocalDate.of(2015, 4, 10), 1.0);
         put(LocalDate.of(2015, 4, 12), 2.0);
@@ -101,7 +102,7 @@ public class Holidays {
             case TUESDAY: return 0.0;
             case WEDNESDAY:return 0.0;
             case THURSDAY:return 0.0;
-            case FRIDAY:return 0.0;
+            case FRIDAY:return 0.1;
             case SATURDAY:return 1.0;
             case SUNDAY:return 1.0;
             default:return 0.0;
