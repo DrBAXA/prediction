@@ -27,6 +27,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
@@ -38,7 +39,7 @@ public class Main {
     private static UnaryOperator<Double> same = d -> d;
     private static UnaryOperator<Double> signedSquare = d -> Math.abs(d) * d;
     private static UnaryOperator<Double> cubic = d -> Math.pow(d, 3);
-    private static UnaryOperator<Double> sqrt = d -> Math.sqrt(d);
+    private static UnaryOperator<Double> sqrt = Math::sqrt;
 
     public static void main(String[] args) throws IOException {
         prepareFiles();
@@ -50,14 +51,19 @@ public class Main {
         Map<LocalDate, Double> load = getLoad();
         Holidays holidays = new Holidays();
 
+        Map<LocalDate, WeatherModel> map = parser.getWeather(LocalDate.of(2015, 3, 1), LocalDate.of(2016, 4, 2)).stream()
+                .filter(wr -> load.containsKey(wr.getDate()))
+                .collect(HashMap::new, (m, wm) -> m.put(wm.getDate(), wm), Map::putAll);
+
         Files.write(Paths.get("out.csv"), parser.getWeather(LocalDate.of(2015, 3, 1), LocalDate.of(2016, 4, 2)).stream()
                 .filter(wr -> load.containsKey(wr.getDate()))
-                .map(wr -> getMatrixRowString(wr, holidays, load))
+                .map(wr -> getMatrixRowString(map, wr, holidays, load))
                 .collect(Collectors.toList()));
+
 
         double[][] xArray = parser.getWeather(LocalDate.of(2015, 3, 1), LocalDate.of(2016, 4, 2)).stream()
                 .filter(wr -> load.containsKey(wr.getDate()))
-                .map(wr -> getXMatrixRowArray(wr, holidays, load))
+                .map(wr -> getXMatrixRowArray(map, wr, holidays, load))
                 .collect(Collectors.toList())
                 .toArray(new double[1][1]);
 
@@ -82,7 +88,7 @@ public class Main {
         System.out.printf("max dy = %.2f%n", DoubleStream.of(dya).map(Math::abs).max().orElseGet(() -> 0.0));
         System.out.printf("dy < 10%% count = %.1f%%%n", DoubleStream.of(dya).map(Math::abs).filter(d -> d < 0.1).count()/(double)allCount*100);
         System.out.printf("dy < 5%% count = %.1f%%%n", DoubleStream.of(dya).map(Math::abs).filter(d -> d < 0.05).count()/(double)allCount*100);
-        System.out.printf("dy < 2%% count = %.1f%%%n", DoubleStream.of(dya).map(Math::abs).filter(d -> d < 0.02).count()/(double)allCount*100);
+        System.out.printf("dy < 3%% count = %.1f%%%n", DoubleStream.of(dya).map(Math::abs).filter(d -> d < 0.03).count()/(double)allCount*100);
         System.out.println("=======================================");
 
 
@@ -149,20 +155,43 @@ public class Main {
         }).collect(Collectors.toList());
     }
 
-    private static String getMatrixRowString(WeatherModel model, Holidays holidays, Map<LocalDate, Double> load) {
-        return getDataBuilder(model, holidays, load).build();
+    private static String getMatrixRowString(Map<LocalDate, WeatherModel> map, WeatherModel model, Holidays holidays, Map<LocalDate, Double> load) {
+        return getDataBuilder(map, model, holidays, load).build();
     }
 
-    private static double[] getXMatrixRowArray(WeatherModel model, Holidays holidays, Map<LocalDate, Double> load) {
-        return getDataBuilder(model, holidays, load).buildXArrayRow();
+    private static double[] getXMatrixRowArray(Map<LocalDate, WeatherModel> map, WeatherModel model, Holidays holidays, Map<LocalDate, Double> load) {
+        return getDataBuilder(map, model, holidays, load).buildXArrayRow();
     }
 
     private static double[] getYMatrixRowArray(WeatherModel model, Holidays holidays, Map<LocalDate, Double> load) {
         return new double[]{load.get(model.getDate())};
     }
 
-    public static MatrixBuilder getDataBuilder(WeatherModel model, Holidays holidays, Map<LocalDate, Double> load) {
+    public static MatrixBuilder getDataBuilder(Map<LocalDate, WeatherModel> map, WeatherModel model, Holidays holidays, Map<LocalDate, Double> load) {
         return new MatrixBuilder(load.get(model.getDate()))
+
+                //Integral parameters
+                .addParameter(getDayBefore(map, model).getAvgTemperature() + getDayAfter(map, model).getAvgTemperature() + model.getAvgTemperature(), same)
+                .addParameter(getDayBefore(map, model).getAvgTemperature() + getDayAfter(map, model).getAvgTemperature() + model.getAvgTemperature(), signedSquare)
+                .addParameter(getDayBefore(map, model).getAvgTemperature() + getDayAfter(map, model).getAvgTemperature() + model.getAvgTemperature(), cubic)
+
+                .addParameter(getDayBefore(map, model).getClouds() + getDayAfter(map, model).getClouds() + model.getClouds(), same)
+                .addParameter(getDayBefore(map, model).getClouds() + getDayAfter(map, model).getClouds() + model.getClouds(), signedSquare)
+                .addParameter(getDayBefore(map, model).getClouds() + getDayAfter(map, model).getClouds() + model.getClouds(), cubic)
+
+                .addParameter(getDayBefore(map, model).getAvgHumidity() + getDayAfter(map, model).getAvgHumidity() + model.getAvgHumidity(), same)
+                .addParameter(getDayBefore(map, model).getAvgHumidity() + getDayAfter(map, model).getAvgHumidity() + model.getAvgHumidity(), signedSquare)
+                .addParameter(getDayBefore(map, model).getAvgHumidity() + getDayAfter(map, model).getAvgHumidity() + model.getAvgHumidity(), cubic)
+
+                .addParameter(getDayBefore(map, model).getPrecipitation() + getDayAfter(map, model).getPrecipitation() + model.getPrecipitation(), same)
+                .addParameter(getDayBefore(map, model).getPrecipitation() + getDayAfter(map, model).getPrecipitation() + model.getPrecipitation(), signedSquare)
+                .addParameter(getDayBefore(map, model).getPrecipitation() + getDayAfter(map, model).getPrecipitation() + model.getPrecipitation(), cubic)
+
+                .addParameter(getDayBefore(map, model).getWind() + getDayAfter(map, model).getWind() + model.getWind(), same)
+                .addParameter(getDayBefore(map, model).getWind() + getDayAfter(map, model).getWind() + model.getWind(), signedSquare)
+                .addParameter(getDayBefore(map, model).getWind() + getDayAfter(map, model).getWind() + model.getWind(), cubic)
+
+
                 //Holidays
                 .addParameter(holidays.religious(model.getDate()), d -> d * -100)
                 .addParameter(holidays.state(model.getDate()), d -> d * -100)
@@ -263,6 +292,14 @@ public class Main {
                 .addParameter((model.getSunSetBeforeWork() - isDayLightSaving(model.getDate())*3600) * holidays.school(model.getDate()), cubic)
                 .addParameter((model.getSunRiseBeforeWork() - isDayLightSaving(model.getDate())*3600) * holidays.school(model.getDate()), cubic)
                 ;
+    }
+
+    private static WeatherModel getDayBefore(Map<LocalDate, WeatherModel> modelMap, WeatherModel model) {
+        return Optional.ofNullable(modelMap.get(model.getDate().minusDays(1))).orElseGet(() -> model);
+    }
+
+    private static WeatherModel getDayAfter(Map<LocalDate, WeatherModel> modelMap, WeatherModel model) {
+        return Optional.ofNullable(modelMap.get(model.getDate().plusDays(1))).orElseGet(() -> model);
     }
 
     public static double isDayLightSaving(LocalDate date) {
