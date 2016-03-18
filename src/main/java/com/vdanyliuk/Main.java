@@ -73,11 +73,13 @@ public class Main {
         RealMatrix theta = new LUDecomposition((X.transpose().multiply(X))).getSolver().getInverse().multiply(X.transpose()).multiply(y);
         RealMatrix res = X.multiply(theta);
         RealVector dy = y.add(res.scalarMultiply(-1)).getColumnVector(0);
-        double[] dya = dy.ebeDivide(y.getColumnVector(0)).toArray();
+        RealVector dyp = dy.ebeDivide(y.getColumnVector(0));
+        double[] dya = dyp.toArray();
         int allCount = dya.length;
         System.out.println("=======================================");
         System.out.println("squareSum = " + DoubleStream.of(dy.toArray()).map(d -> d * d).sum());
         System.out.println("count = " + allCount);
+        System.out.printf("max dy = %.2f%n", DoubleStream.of(dya).map(Math::abs).max().orElseGet(() -> 0.0));
         System.out.printf("dy < 10%% count = %.1f%%%n", DoubleStream.of(dya).map(Math::abs).filter(d -> d < 0.1).count()/(double)allCount*100);
         System.out.printf("dy < 5%% count = %.1f%%%n", DoubleStream.of(dya).map(Math::abs).filter(d -> d < 0.05).count()/(double)allCount*100);
         System.out.printf("dy < 2%% count = %.1f%%%n", DoubleStream.of(dya).map(Math::abs).filter(d -> d < 0.02).count()/(double)allCount*100);
@@ -85,7 +87,7 @@ public class Main {
 
 
         plotCharts("abs.png", y, res);
-        plotCharts("d.png", dy.ebeDivide(y.getColumnVector(0)));
+        plotCharts("d.png", dyp);
     }
 
     private static void plotCharts(String fileName, RealMatrix... matrices) throws IOException {
@@ -162,8 +164,14 @@ public class Main {
     public static MatrixBuilder getDataBuilder(WeatherModel model, Holidays holidays, Map<LocalDate, Double> load) {
         return new MatrixBuilder(load.get(model.getDate()))
                 //Holidays
-                .addParameter(holidays.religious(model.getDate()), d -> d * -80)
+                .addParameter(holidays.religious(model.getDate()), d -> d * -100)
                 .addParameter(holidays.state(model.getDate()), d -> d * -100)
+                .addParameter(holidays.school(model.getDate()), d -> d * -100)
+
+                .addParameter(holidays.religious(model.getDate())*holidays.religious(model.getDate().minusDays(1))*holidays.religious(model.getDate().plusDays(1)), d -> d * -100)
+                .addParameter(holidays.religious(model.getDate())+holidays.religious(model.getDate().minusDays(1))+holidays.religious(model.getDate().plusDays(1)), d -> d * -100)
+                .addParameter(holidays.religious(model.getDate())*holidays.state(model.getDate().minusDays(1))*holidays.state(model.getDate().plusDays(1)), d -> d * -100)
+
 
                 //Regular weather parameters
                 .addParameter(model.getAstronomicalDayLong(), same)
@@ -219,12 +227,41 @@ public class Main {
 
                 //Special parameters
                 .addParameter(isDayLightSaving(model.getDate()), same)
+
                 .addParameter(model.getAvgTemperature() * holidays.state(model.getDate()), d -> -d)
                 .addParameter(model.getAvgTemperature() * holidays.state(model.getDate()), cubic)
                 .addParameter(model.getAvgTemperature() * holidays.religious(model.getDate()), d -> -d)
                 .addParameter(model.getAvgTemperature() * holidays.religious(model.getDate()), cubic)
+                .addParameter(model.getAvgTemperature() * holidays.school(model.getDate()), d -> -d)
+                .addParameter(model.getAvgTemperature() * holidays.school(model.getDate()), cubic)
+
+                .addParameter(model.getAstronomicalDayLong() * holidays.state(model.getDate()), d -> -d)
+                .addParameter(model.getAstronomicalDayLong() * holidays.state(model.getDate()), cubic)
                 .addParameter(model.getAstronomicalDayLong() * holidays.religious(model.getDate()), d -> -d)
                 .addParameter(model.getAstronomicalDayLong() * holidays.religious(model.getDate()), cubic)
+                .addParameter(model.getAstronomicalDayLong() * holidays.school(model.getDate()), d -> -d)
+                .addParameter(model.getAstronomicalDayLong() * holidays.school(model.getDate()), cubic)
+
+                .addParameter(model.getSunRiseBeforeWork() * holidays.state(model.getDate()), d -> -d)
+                .addParameter(model.getSunRiseBeforeWork() * holidays.state(model.getDate()), cubic)
+                .addParameter(model.getSunRiseBeforeWork() * holidays.religious(model.getDate()), d -> -d)
+                .addParameter(model.getSunRiseBeforeWork() * holidays.religious(model.getDate()), cubic)
+                .addParameter(model.getSunRiseBeforeWork() * holidays.school(model.getDate()), d -> -d)
+                .addParameter(model.getSunRiseBeforeWork() * holidays.school(model.getDate()), cubic)
+
+                .addParameter(model.getSunSetBeforeWork() * holidays.state(model.getDate()), d -> -d)
+                .addParameter(model.getSunSetBeforeWork() * holidays.state(model.getDate()), cubic)
+                .addParameter(model.getSunSetBeforeWork() * holidays.religious(model.getDate()), d -> -d)
+                .addParameter(model.getSunSetBeforeWork() * holidays.religious(model.getDate()), cubic)
+                .addParameter(model.getSunSetBeforeWork() * holidays.school(model.getDate()), d -> -d)
+                .addParameter(model.getSunSetBeforeWork() * holidays.school(model.getDate()), cubic)
+
+                .addParameter((model.getSunSetBeforeWork() + isDayLightSaving(model.getDate())*3600) * holidays.religious(model.getDate()), cubic)
+                .addParameter((model.getSunRiseBeforeWork() + isDayLightSaving(model.getDate())*3600) * holidays.religious(model.getDate()), cubic)
+                .addParameter((model.getSunSetBeforeWork() - isDayLightSaving(model.getDate())*3600) * holidays.state(model.getDate()), cubic)
+                .addParameter((model.getSunRiseBeforeWork() - isDayLightSaving(model.getDate())*3600) * holidays.state(model.getDate()), cubic)
+                .addParameter((model.getSunSetBeforeWork() - isDayLightSaving(model.getDate())*3600) * holidays.school(model.getDate()), cubic)
+                .addParameter((model.getSunRiseBeforeWork() - isDayLightSaving(model.getDate())*3600) * holidays.school(model.getDate()), cubic)
                 ;
     }
 
