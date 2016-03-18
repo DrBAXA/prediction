@@ -3,10 +3,7 @@ package com.vdanyliuk;
 import com.vdanyliuk.util.Average;
 import com.vdanyliuk.weather.WUndergroundWeatherParser;
 import com.vdanyliuk.weather.WeatherModel;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.linear.LUDecomposition;
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.RealVector;
+import org.apache.commons.math3.linear.*;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
@@ -84,6 +81,7 @@ public class Main {
         int allCount = dya.length;
         System.out.println("=======================================");
         System.out.println("squareSum = " + DoubleStream.of(dy.toArray()).map(d -> d * d).sum());
+        System.out.println("median = " + DoubleStream.of(dy.toArray()).map(Math::abs).sorted().skip(dy.getDimension()/2).findFirst().orElseGet(() -> 0.0));
         System.out.println("count = " + allCount);
         System.out.printf("max dy = %.2f%n", DoubleStream.of(dya).map(Math::abs).max().orElseGet(() -> 0.0));
         System.out.printf("dy < 10%% count = %.1f%%%n", DoubleStream.of(dya).map(Math::abs).filter(d -> d < 0.1).count()/(double)allCount*100);
@@ -93,7 +91,8 @@ public class Main {
 
 
         plotCharts("abs.png", y, res);
-        plotCharts("d.png", dyp);
+        plotCharts("dy.png", dyp);
+        plotCharts("d.png", new ArrayRealVector(DoubleStream.of(dy.toArray()).map(Math::abs).sorted().toArray()));
     }
 
     private static void plotCharts(String fileName, RealMatrix... matrices) throws IOException {
@@ -171,9 +170,9 @@ public class Main {
         return new MatrixBuilder(load.get(model.getDate()))
 
                 //Integral parameters
-                .addParameter(getDaysBefore(map, model, 2).getAvgTemperature() + getDaysBefore(map, model, 1).getAvgTemperature() + model.getAvgTemperature(), same)
-                .addParameter(getDaysBefore(map, model, 2).getAvgTemperature() + getDaysBefore(map, model, 1).getAvgTemperature() + model.getAvgTemperature(), signedSquare)
-                .addParameter(getDaysBefore(map, model, 2).getAvgTemperature() + getDaysBefore(map, model, 1).getAvgTemperature() + model.getAvgTemperature(), cubic)
+                .addParameter(getDaysBefore(map, model, 4).getAvgTemperature() + getDaysBefore(map, model, 3).getAvgTemperature() + getDaysBefore(map, model, 2).getAvgTemperature() + getDaysBefore(map, model, 1).getAvgTemperature() + model.getAvgTemperature(), same)
+                .addParameter(getDaysBefore(map, model, 4).getAvgTemperature() + getDaysBefore(map, model, 3).getAvgTemperature() + getDaysBefore(map, model, 2).getAvgTemperature() + getDaysBefore(map, model, 1).getAvgTemperature() + model.getAvgTemperature(), signedSquare)
+                .addParameter(getDaysBefore(map, model, 4).getAvgTemperature() + getDaysBefore(map, model, 3).getAvgTemperature() + getDaysBefore(map, model, 2).getAvgTemperature() + getDaysBefore(map, model, 1).getAvgTemperature() + model.getAvgTemperature(), cubic)
 
                 .addParameter(getDaysBefore(map, model, 2).getClouds() + getDaysBefore(map, model, 1).getClouds() + model.getClouds(), same)
                 .addParameter(getDaysBefore(map, model, 2).getClouds() + getDaysBefore(map, model, 1).getClouds() + model.getClouds(), signedSquare)
