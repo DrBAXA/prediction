@@ -348,12 +348,12 @@ public class Main {
                 .addParameter(model.getSunSetBeforeWork() * holidays.school(model.getDate()), d -> -d)
                 .addParameter(model.getSunSetBeforeWork() * holidays.school(model.getDate()), cubic)
 
-                .addParameter((model.getSunSetBeforeWork() + isDayLightSaving(model.getDate())*3600) * holidays.religious(model.getDate()), cubic)
+                .addParameter((model.getSunSetBeforeWork() - isDayLightSaving(model.getDate())*3600) * holidays.religious(model.getDate()), cubic)
                 .addParameter((model.getSunRiseBeforeWork() + isDayLightSaving(model.getDate())*3600) * holidays.religious(model.getDate()), cubic)
                 .addParameter((model.getSunSetBeforeWork() - isDayLightSaving(model.getDate())*3600) * holidays.state(model.getDate()), cubic)
-                .addParameter((model.getSunRiseBeforeWork() - isDayLightSaving(model.getDate())*3600) * holidays.state(model.getDate()), cubic)
+                .addParameter((model.getSunRiseBeforeWork() + isDayLightSaving(model.getDate())*3600) * holidays.state(model.getDate()), cubic)
                 .addParameter((model.getSunSetBeforeWork() - isDayLightSaving(model.getDate())*3600) * holidays.school(model.getDate()), cubic)
-                .addParameter((model.getSunRiseBeforeWork() - isDayLightSaving(model.getDate())*3600) * holidays.school(model.getDate()), cubic)
+                .addParameter((model.getSunRiseBeforeWork() + isDayLightSaving(model.getDate())*3600) * holidays.school(model.getDate()), cubic)
                 ;
     }
 
