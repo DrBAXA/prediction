@@ -1,4 +1,4 @@
-package com.vdanyliuk.weather;
+package com.vdanyliuk.data.weather;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.nodes.Document;

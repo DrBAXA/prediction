@@ -1,8 +1,10 @@
 package com.vdanyliuk;
 
+import com.vdanyliuk.data.XDataRowBuilder;
+import com.vdanyliuk.data.holidays.Holidays;
 import com.vdanyliuk.util.Average;
-import com.vdanyliuk.weather.WUndergroundWeatherParser;
-import com.vdanyliuk.weather.WeatherModel;
+import com.vdanyliuk.data.weather.WUndergroundWeatherParser;
+import com.vdanyliuk.data.weather.WeatherModel;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.LUDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
@@ -153,8 +155,8 @@ public class Main {
         return new double[]{load.get(model.getDate())};
     }
 
-    public static MatrixBuilder getDataBuilder(WeatherModel model, Holidays holidays, Map<LocalDate, Double> load) {
-        return new MatrixBuilder(load.get(model.getDate()))
+    public static XDataRowBuilder getDataBuilder(WeatherModel model, Holidays holidays, Map<LocalDate, Double> load) {
+        return new XDataRowBuilder(load.get(model.getDate()))
                 //Holidays
                 .addParameter(holidays.religious(model.getDate()), d -> d * -80)
                 .addParameter(holidays.state(model.getDate()), d -> d * -100)

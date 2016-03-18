@@ -1,4 +1,4 @@
-package com.vdanyliuk.weather;
+package com.vdanyliuk.data.weather;
 
 import lombok.Builder;
 import lombok.Data;
@@ -9,7 +9,7 @@ import java.time.format.DateTimeFormatter;
 
 @Data
 @Builder
-public class WeatherModel implements Serializable{
+public class WeatherModel implements Serializable {
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy.MM.dd");
     private LocalDate date;
@@ -60,4 +60,5 @@ public class WeatherModel implements Serializable{
                 "," + sunSetBeforeWork +
                 "," + clouds;
     }
+
 }
