@@ -190,6 +190,7 @@ public class Main {
                 .addParameter(getIntegralParam(map, model, "wind", 3), signedSquare)
                 .addParameter(getIntegralParam(map, model, "wind", 3), cubic)
 
+                .addParameter(getIntegralParam(map, model, "pressure", 3), same)
 
                 //Holidays
                 .addParameter(holidays.religious(model.getDate()), d -> d * -100)
@@ -283,6 +284,34 @@ public class Main {
                 .addParameter(model.getClouds() * holidays.religious(model.getDate()), cubic)
                 .addParameter(model.getClouds() * holidays.school(model.getDate()), d -> -d)
                 .addParameter(model.getClouds() * holidays.school(model.getDate()), cubic)
+
+                .addParameter(getIntegralParam(map, model, "wind", 4) * holidays.state(model.getDate()), d -> -d)
+                .addParameter(getIntegralParam(map, model, "wind", 4) * holidays.state(model.getDate()), cubic)
+                .addParameter(getIntegralParam(map, model, "wind", 4) * holidays.religious(model.getDate()), d -> -d)
+                .addParameter(getIntegralParam(map, model, "wind", 4) * holidays.religious(model.getDate()), cubic)
+                .addParameter(getIntegralParam(map, model, "wind", 4) * holidays.school(model.getDate()), d -> -d)
+                .addParameter(getIntegralParam(map, model, "wind", 4) * holidays.school(model.getDate()), cubic)
+
+                .addParameter(model.getWind() * holidays.state(model.getDate()), d -> -d)
+                .addParameter(model.getWind() * holidays.state(model.getDate()), cubic)
+                .addParameter(model.getWind() * holidays.religious(model.getDate()), d -> -d)
+                .addParameter(model.getWind() * holidays.religious(model.getDate()), cubic)
+                .addParameter(model.getWind() * holidays.school(model.getDate()), d -> -d)
+                .addParameter(model.getWind() * holidays.school(model.getDate()), cubic)
+
+                .addParameter(getIntegralParam(map, model, "precipitation", 4) * holidays.state(model.getDate()), d -> -d)
+                .addParameter(getIntegralParam(map, model, "precipitation", 4) * holidays.state(model.getDate()), cubic)
+                .addParameter(getIntegralParam(map, model, "precipitation", 4) * holidays.religious(model.getDate()), d -> -d)
+                .addParameter(getIntegralParam(map, model, "precipitation", 4) * holidays.religious(model.getDate()), cubic)
+                .addParameter(getIntegralParam(map, model, "precipitation", 4) * holidays.school(model.getDate()), d -> -d)
+                .addParameter(getIntegralParam(map, model, "precipitation", 4) * holidays.school(model.getDate()), cubic)
+
+                .addParameter(model.getPrecipitation() * holidays.state(model.getDate()), d -> -d)
+                .addParameter(model.getPrecipitation() * holidays.state(model.getDate()), cubic)
+                .addParameter(model.getPrecipitation() * holidays.religious(model.getDate()), d -> -d)
+                .addParameter(model.getPrecipitation() * holidays.religious(model.getDate()), cubic)
+                .addParameter(model.getPrecipitation() * holidays.school(model.getDate()), d -> -d)
+                .addParameter(model.getPrecipitation() * holidays.school(model.getDate()), cubic)
 
                 .addParameter(getIntegralParam(map, model, "avgHumidity", 3) * holidays.state(model.getDate()), d -> -d)
                 .addParameter(getIntegralParam(map, model, "avgHumidity", 3) * holidays.state(model.getDate()), cubic)

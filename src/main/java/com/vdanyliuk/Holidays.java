@@ -16,6 +16,7 @@ public class Holidays {
         put(LocalDate.of(2015, 5, 1), 1.0);
         put(LocalDate.of(2015, 5, 4), 1.0);
         put(LocalDate.of(2015, 5, 11), 1.0);
+        put(LocalDate.of(2015, 6, 1), 1.0);
         put(LocalDate.of(2015, 6, 29), 1.0);
         put(LocalDate.of(2015, 8, 24), 1.0);
         put(LocalDate.of(2015, 10, 14), 1.0);
