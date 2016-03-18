@@ -45,7 +45,7 @@ public class HistoryWeatherDataExtractor {
 
     double getSunRiseBeforeWork() {
         LocalTime sunRise = getTimeValueForCssAndRegex(document, "div#astronomy-mod.wx-module.simple table tbody tr", "Фактичний час\\s+(\\d{2}:\\d{2})");
-        return ChronoUnit.SECONDS.between(sunRise, LocalTime.of(7,0));
+        return ChronoUnit.SECONDS.between(sunRise, LocalTime.of(6,30));
     }
 
     double getSunSetBeforeWork() {

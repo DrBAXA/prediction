@@ -72,14 +72,20 @@ public class Main {
 
         RealMatrix theta = new LUDecomposition((X.transpose().multiply(X))).getSolver().getInverse().multiply(X.transpose()).multiply(y);
         RealMatrix res = X.multiply(theta);
-        RealVector dy = y.add(res.scalarMultiply(-1)).getColumnVector(0).ebeDivide(y.getColumnVector(0));
-        System.out.println("==============J========================");
-        System.out.println(DoubleStream.of(dy.toArray()).map(d -> d * d).sum());
+        RealVector dy = y.add(res.scalarMultiply(-1)).getColumnVector(0);
+        double[] dya = dy.ebeDivide(y.getColumnVector(0)).toArray();
+        int allCount = dya.length;
+        System.out.println("=======================================");
+        System.out.println("squareSum = " + DoubleStream.of(dy.toArray()).map(d -> d * d).sum());
+        System.out.println("count = " + allCount);
+        System.out.printf("dy < 10%% count = %.1f%%%n", DoubleStream.of(dya).map(Math::abs).filter(d -> d < 0.1).count()/(double)allCount*100);
+        System.out.printf("dy < 5%% count = %.1f%%%n", DoubleStream.of(dya).map(Math::abs).filter(d -> d < 0.05).count()/(double)allCount*100);
+        System.out.printf("dy < 2%% count = %.1f%%%n", DoubleStream.of(dya).map(Math::abs).filter(d -> d < 0.02).count()/(double)allCount*100);
         System.out.println("=======================================");
 
 
         plotCharts("abs.png", y, res);
-        plotCharts("d.png", dy);
+        plotCharts("d.png", dy.ebeDivide(y.getColumnVector(0)));
     }
 
     private static void plotCharts(String fileName, RealMatrix... matrices) throws IOException {
@@ -192,12 +198,15 @@ public class Main {
                 .addParameter(model.getPressure(), signedSquare)
                 .addParameter(model.getVisibility(), signedSquare)
                 .addParameter(model.getWind(), signedSquare)
+                .addParameter(model.getSunRiseBeforeWork(), signedSquare)
+                .addParameter(model.getSunSetBeforeWork(), signedSquare)
 
                 //Cubic weather parameters
                 .addParameter(model.getAstronomicalDayLong(), cubic)
                 .addParameter(model.getAvgHumidity(), cubic)
                 .addParameter(model.getAvgTemperature(), cubic)
-
+                .addParameter(model.getSunRiseBeforeWork(), cubic)
+                .addParameter(model.getSunSetBeforeWork(), cubic)
 
                 //SQRT
                 .addParameter(model.getClouds(), sqrt)
