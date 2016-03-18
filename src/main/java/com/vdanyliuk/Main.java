@@ -25,7 +25,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
@@ -67,7 +66,7 @@ public class Main {
 
         double[][] yArray = parser.getWeather(LocalDate.of(2015, 3, 1), LocalDate.of(2016, 4, 2)).stream()
                 .filter(wr -> load.containsKey(wr.getDate()))
-                .map(wr -> getYMatrixRowArray(wr, holidays, load))
+                .map(wr -> getYMatrixRowArray(wr, load))
                 .collect(Collectors.toList())
                 .toArray(new double[1][1]);
 
@@ -163,7 +162,7 @@ public class Main {
         return getDataBuilder(map, model, holidays, load).buildXArrayRow();
     }
 
-    private static double[] getYMatrixRowArray(WeatherModel model, Holidays holidays, Map<LocalDate, Double> load) {
+    private static double[] getYMatrixRowArray(WeatherModel model, Map<LocalDate, Double> load) {
         return new double[]{load.get(model.getDate())};
     }
 
@@ -257,12 +256,47 @@ public class Main {
                 //Special parameters
                 .addParameter(isDayLightSaving(model.getDate()), same)
 
+                .addParameter(getIntegralParam(map, model, "avgTemperature", 6) * holidays.state(model.getDate()), d -> -d)
+                .addParameter(getIntegralParam(map, model, "avgTemperature", 6) * holidays.state(model.getDate()), cubic)
+                .addParameter(getIntegralParam(map, model, "avgTemperature", 6) * holidays.religious(model.getDate()), d -> -d)
+                .addParameter(getIntegralParam(map, model, "avgTemperature", 6) * holidays.religious(model.getDate()), cubic)
+                .addParameter(getIntegralParam(map, model, "avgTemperature", 6) * holidays.school(model.getDate()), d -> -d)
+                .addParameter(getIntegralParam(map, model, "avgTemperature", 6) * holidays.school(model.getDate()), cubic)
+
                 .addParameter(model.getAvgTemperature() * holidays.state(model.getDate()), d -> -d)
                 .addParameter(model.getAvgTemperature() * holidays.state(model.getDate()), cubic)
                 .addParameter(model.getAvgTemperature() * holidays.religious(model.getDate()), d -> -d)
                 .addParameter(model.getAvgTemperature() * holidays.religious(model.getDate()), cubic)
                 .addParameter(model.getAvgTemperature() * holidays.school(model.getDate()), d -> -d)
                 .addParameter(model.getAvgTemperature() * holidays.school(model.getDate()), cubic)
+
+                .addParameter(getIntegralParam(map, model, "clouds", 3) * holidays.state(model.getDate()), d -> -d)
+                .addParameter(getIntegralParam(map, model, "clouds", 3) * holidays.state(model.getDate()), cubic)
+                .addParameter(getIntegralParam(map, model, "clouds", 3) * holidays.religious(model.getDate()), d -> -d)
+                .addParameter(getIntegralParam(map, model, "clouds", 3) * holidays.religious(model.getDate()), cubic)
+                .addParameter(getIntegralParam(map, model, "clouds", 3) * holidays.school(model.getDate()), d -> -d)
+                .addParameter(getIntegralParam(map, model, "clouds", 3) * holidays.school(model.getDate()), cubic)
+
+                .addParameter(model.getClouds() * holidays.state(model.getDate()), d -> -d)
+                .addParameter(model.getClouds() * holidays.state(model.getDate()), cubic)
+                .addParameter(model.getClouds() * holidays.religious(model.getDate()), d -> -d)
+                .addParameter(model.getClouds() * holidays.religious(model.getDate()), cubic)
+                .addParameter(model.getClouds() * holidays.school(model.getDate()), d -> -d)
+                .addParameter(model.getClouds() * holidays.school(model.getDate()), cubic)
+
+                .addParameter(getIntegralParam(map, model, "avgHumidity", 3) * holidays.state(model.getDate()), d -> -d)
+                .addParameter(getIntegralParam(map, model, "avgHumidity", 3) * holidays.state(model.getDate()), cubic)
+                .addParameter(getIntegralParam(map, model, "avgHumidity", 3) * holidays.religious(model.getDate()), d -> -d)
+                .addParameter(getIntegralParam(map, model, "avgHumidity", 3) * holidays.religious(model.getDate()), cubic)
+                .addParameter(getIntegralParam(map, model, "avgHumidity", 3) * holidays.school(model.getDate()), d -> -d)
+                .addParameter(getIntegralParam(map, model, "avgHumidity", 3) * holidays.school(model.getDate()), cubic)
+
+                .addParameter(model.getAvgHumidity() * holidays.state(model.getDate()), d -> -d)
+                .addParameter(model.getAvgHumidity() * holidays.state(model.getDate()), cubic)
+                .addParameter(model.getAvgHumidity() * holidays.religious(model.getDate()), d -> -d)
+                .addParameter(model.getAvgHumidity() * holidays.religious(model.getDate()), cubic)
+                .addParameter(model.getAvgHumidity() * holidays.school(model.getDate()), d -> -d)
+                .addParameter(model.getAvgHumidity() * holidays.school(model.getDate()), cubic)
 
                 .addParameter(model.getAstronomicalDayLong() * holidays.state(model.getDate()), d -> -d)
                 .addParameter(model.getAstronomicalDayLong() * holidays.state(model.getDate()), cubic)
@@ -312,10 +346,6 @@ public class Main {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private static WeatherModel getDaysBefore(Map<LocalDate, WeatherModel> modelMap, WeatherModel model, int i) {
-        return Optional.ofNullable(modelMap.get(model.getDate().minusDays(i))).orElseGet(() -> model);
     }
 
     public static double isDayLightSaving(LocalDate date) {
