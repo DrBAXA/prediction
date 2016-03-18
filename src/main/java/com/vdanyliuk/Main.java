@@ -17,6 +17,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.*;
@@ -170,25 +171,25 @@ public class Main {
         return new MatrixBuilder(load.get(model.getDate()))
 
                 //Integral parameters
-                .addParameter(getDaysBefore(map, model, 4).getAvgTemperature() + getDaysBefore(map, model, 3).getAvgTemperature() + getDaysBefore(map, model, 2).getAvgTemperature() + getDaysBefore(map, model, 1).getAvgTemperature() + model.getAvgTemperature(), same)
-                .addParameter(getDaysBefore(map, model, 4).getAvgTemperature() + getDaysBefore(map, model, 3).getAvgTemperature() + getDaysBefore(map, model, 2).getAvgTemperature() + getDaysBefore(map, model, 1).getAvgTemperature() + model.getAvgTemperature(), signedSquare)
-                .addParameter(getDaysBefore(map, model, 4).getAvgTemperature() + getDaysBefore(map, model, 3).getAvgTemperature() + getDaysBefore(map, model, 2).getAvgTemperature() + getDaysBefore(map, model, 1).getAvgTemperature() + model.getAvgTemperature(), cubic)
+                .addParameter(getIntegralParam(map, model, "avgTemperature", 6), same)
+                .addParameter(getIntegralParam(map, model, "avgTemperature", 6), signedSquare)
+                .addParameter(getIntegralParam(map, model, "avgTemperature", 6), cubic)
 
-                .addParameter(getDaysBefore(map, model, 2).getClouds() + getDaysBefore(map, model, 1).getClouds() + model.getClouds(), same)
-                .addParameter(getDaysBefore(map, model, 2).getClouds() + getDaysBefore(map, model, 1).getClouds() + model.getClouds(), signedSquare)
-                .addParameter(getDaysBefore(map, model, 2).getClouds() + getDaysBefore(map, model, 1).getClouds() + model.getClouds(), cubic)
+                .addParameter(getIntegralParam(map, model, "clouds", 3), same)
+                .addParameter(getIntegralParam(map, model, "clouds", 3), signedSquare)
+                .addParameter(getIntegralParam(map, model, "clouds", 3), cubic)
 
-                .addParameter(getDaysBefore(map, model, 2).getAvgHumidity() + getDaysBefore(map, model, 1).getAvgHumidity() + model.getAvgHumidity(), same)
-                .addParameter(getDaysBefore(map, model, 2).getAvgHumidity() + getDaysBefore(map, model, 1).getAvgHumidity() + model.getAvgHumidity(), signedSquare)
-                .addParameter(getDaysBefore(map, model, 2).getAvgHumidity() + getDaysBefore(map, model, 1).getAvgHumidity() + model.getAvgHumidity(), cubic)
+                .addParameter(getIntegralParam(map, model, "avgHumidity", 3), same)
+                .addParameter(getIntegralParam(map, model, "avgHumidity", 3), signedSquare)
+                .addParameter(getIntegralParam(map, model, "avgHumidity", 3), cubic)
 
-                .addParameter(getDaysBefore(map, model, 2).getPrecipitation() + getDaysBefore(map, model, 1).getPrecipitation() + model.getPrecipitation(), same)
-                .addParameter(getDaysBefore(map, model, 2).getPrecipitation() + getDaysBefore(map, model, 1).getPrecipitation() + model.getPrecipitation(), signedSquare)
-                .addParameter(getDaysBefore(map, model, 2).getPrecipitation() + getDaysBefore(map, model, 1).getPrecipitation() + model.getPrecipitation(), cubic)
+                .addParameter(getIntegralParam(map, model, "precipitation", 3), same)
+                .addParameter(getIntegralParam(map, model, "precipitation", 3), signedSquare)
+                .addParameter(getIntegralParam(map, model, "precipitation", 3), cubic)
 
-                .addParameter(getDaysBefore(map, model, 2).getWind() + getDaysBefore(map, model, 1).getWind() + model.getWind(), same)
-                .addParameter(getDaysBefore(map, model, 2).getWind() + getDaysBefore(map, model, 1).getWind() + model.getWind(), signedSquare)
-                .addParameter(getDaysBefore(map, model, 2).getWind() + getDaysBefore(map, model, 1).getWind() + model.getWind(), cubic)
+                .addParameter(getIntegralParam(map, model, "wind", 3), same)
+                .addParameter(getIntegralParam(map, model, "wind", 3), signedSquare)
+                .addParameter(getIntegralParam(map, model, "wind", 3), cubic)
 
 
                 //Holidays
@@ -293,12 +294,28 @@ public class Main {
                 ;
     }
 
-    private static WeatherModel getDaysBefore(Map<LocalDate, WeatherModel> modelMap, WeatherModel model, int i) {
-        return Optional.ofNullable(modelMap.get(model.getDate().minusDays(i))).orElseGet(() -> model);
+    private static double getIntegralParam(Map<LocalDate, WeatherModel> map, WeatherModel model, String paramName, int daysCount) {
+        return Stream.iterate(model.getDate(), date -> date.minusDays(1))
+                .limit(daysCount)
+                .map(map::get)
+                .filter(m -> m != null)
+                .mapToDouble(m -> getValue(m, paramName))
+                .average()
+                .orElseGet(() -> 0.0)*daysCount;
     }
 
-    private static WeatherModel getDayAfter(Map<LocalDate, WeatherModel> modelMap, WeatherModel model) {
-        return Optional.ofNullable(modelMap.get(model.getDate().plusDays(1))).orElseGet(() -> model);
+    private static double getValue(WeatherModel model, String paramName) {
+        try {
+            Field field = WeatherModel.class.getDeclaredField(paramName);
+            field.setAccessible(true);
+            return field.getDouble(model);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static WeatherModel getDaysBefore(Map<LocalDate, WeatherModel> modelMap, WeatherModel model, int i) {
+        return Optional.ofNullable(modelMap.get(model.getDate().minusDays(i))).orElseGet(() -> model);
     }
 
     public static double isDayLightSaving(LocalDate date) {
