@@ -83,8 +83,8 @@ public class Main {
         System.out.println("squareSum = " + DoubleStream.of(dy.toArray()).map(d -> d * d).sum());
         System.out.println("median = " + DoubleStream.of(dy.toArray()).map(Math::abs).sorted().skip(dy.getDimension()/2).findFirst().orElseGet(() -> 0.0));
         System.out.println("count = " + allCount);
-        System.out.printf("max dy = %.2f%n", DoubleStream.of(dya).map(Math::abs).max().orElseGet(() -> 0.0));
-        System.out.printf("dy < 3%% count = %.1f%%%n", DoubleStream.of(dya).map(Math::abs).filter(d -> d < 0.03).count()/(double)allCount*100);
+        System.out.printf("max dy = %.3f%n", DoubleStream.of(dya).map(Math::abs).max().orElseGet(() -> 0.0));
+        System.out.printf("dy < 2%% count = %.1f%%%n", DoubleStream.of(dya).map(Math::abs).filter(d -> d < 0.02).count()/(double)allCount*100);
         System.out.printf("dy < 1%% count = %.1f%%%n", DoubleStream.of(dya).map(Math::abs).filter(d -> d < 0.01).count()/(double)allCount*100);
         System.out.printf("dy < 0.5%% count = %.1f%%%n", DoubleStream.of(dya).map(Math::abs).filter(d -> d < 0.005).count()/(double)allCount*100);
         System.out.println("=======================================");
