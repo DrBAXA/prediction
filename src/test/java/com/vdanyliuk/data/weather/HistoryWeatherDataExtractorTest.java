@@ -24,7 +24,7 @@ public class HistoryWeatherDataExtractorTest {
 
     @Before
     public void setUp() throws Exception {
-        extractor = new HistoryWeatherDataExtractor(WUndergroundWeatherParserTest.DOCUMENT, WUndergroundWeatherParserTest.TEST_DATE);
+        extractor = new HistoryWeatherDataExtractor(WUndergroundWeatherDataProviderTest.DOCUMENT, WUndergroundWeatherDataProviderTest.TEST_DATE);
     }
 
 /*    @Test

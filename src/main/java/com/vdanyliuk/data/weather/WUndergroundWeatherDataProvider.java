@@ -1,5 +1,6 @@
 package com.vdanyliuk.data.weather;
 
+import com.vdanyliuk.util.Average;
 import com.vdanyliuk.util.PropertiesUtil;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -8,6 +9,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -16,7 +19,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Slf4j
-public class WUndergroundWeatherParser implements WeatherParser {
+public class WUndergroundWeatherDataProvider implements WeatherDataProvider {
+
+    public static final DateTimeFormatter F2 = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
     private final static DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy/MM/dd");
     private final static String DEFAULT_URL = "http://ukrainian.wunderground.com/history/airport/UKLI/${Date}/DailyHistory.html";
@@ -26,9 +31,9 @@ public class WUndergroundWeatherParser implements WeatherParser {
     private Map<LocalDate, Double> clouds;
     Map<LocalDate, WeatherModel> cache;
 
-    public WUndergroundWeatherParser(Map<LocalDate, Double> clouds) {
+    public WUndergroundWeatherDataProvider() throws IOException {
         properties = PropertiesUtil.loadProperties("wunderground.properties");
-        this.clouds = clouds;
+        this.clouds = getCloudsData();
         cache = loadCache();
     }
 
@@ -44,6 +49,24 @@ public class WUndergroundWeatherParser implements WeatherParser {
         saveCache(res.stream().collect(HashMap::new, (m, wm) -> m.put(wm.getDate(), wm), Map::putAll));
 
         return res;
+    }
+
+    @Override
+    public WeatherModel getWeather(LocalDate date) {
+        double clouds = Optionalclouds.containsKey(date)
+                .map(d -> Optional.ofNullable(cache.get(d))
+                        .orElseGet(() -> getWeather(getWeatherDayPage(d), d)))
+                .collect(Collectors.toList());
+
+        saveCache(res.stream().collect(HashMap::new, (m, wm) -> m.put(wm.getDate(), wm), Map::putAll));
+
+        return res;
+    }
+
+    private double getClouds(LocalDate date) {
+        return Optional
+                .ofNullable(clouds.get(date))
+                .orElseGet()
     }
 
     private void saveCache(Map<LocalDate, WeatherModel> cache) {
@@ -98,6 +121,20 @@ public class WUndergroundWeatherParser implements WeatherParser {
 
     String getUrlWithDate(String urlPattern, LocalDate date) {
         return urlPattern.replace("${Date}", DATE_FORMATTER.format(date));
+    }
+
+    private static Map<LocalDate, Double> getCloudsData() throws IOException {
+        Map<LocalDate, Average> clouds = new HashMap<>();
+        Files.lines(Paths.get("data/clouds.csv"))
+                .map(l -> l.split(";"))
+                .forEach(a -> clouds.compute(LocalDate.parse(a[0], F2),
+                        (d, av) -> av == null ? new Average() : av.add(Double.parseDouble(a[1]))));
+
+        return clouds.entrySet()
+                .stream()
+                .collect(HashMap::new,
+                        (m, e) -> m.put(e.getKey(), e.getValue().get()),
+                        HashMap::putAll);
     }
 
 }

@@ -79,17 +79,17 @@ public class Holidays {
         put(LocalDate.of(2016, 2, 15), 1.0);
     }};
 
-    public Double religious(LocalDate date){
+    public static Double religious(LocalDate date){
         if(date.getDayOfWeek().equals(DayOfWeek.SUNDAY)) return 1.0;
         return Optional.ofNullable(RELIGIOUS_HOLIDAYS.get(date)).orElse(0.0);
     }
 
-    public Double state(LocalDate localDate){
+    public static Double state(LocalDate localDate){
         if(STATE_HOLIDAYS.containsKey(localDate)) return 1.0;
         return isWeekEnd(localDate);
     }
 
-    public Double school(LocalDate localDate){
+    public static Double school(LocalDate localDate){
         if(SCHOOL_HOLIDAYS.containsKey(localDate)) return 1.0;
         //if(localDate.isAfter(LocalDate.of(2015,5,30)) || localDate.isAfter(LocalDate.of(2015,9,1))) return 1.0;
         if(localDate.isAfter(LocalDate.of(2015,10,30)) || localDate.isAfter(LocalDate.of(2015,11,8))) return 1.0;
@@ -97,7 +97,7 @@ public class Holidays {
         return isWeekEnd(localDate);
     }
 
-    private double isWeekEnd(LocalDate localDate) {
+    private static double isWeekEnd(LocalDate localDate) {
         switch (localDate.getDayOfWeek()){
             case MONDAY: return 0.0;
             case TUESDAY: return 0.0;

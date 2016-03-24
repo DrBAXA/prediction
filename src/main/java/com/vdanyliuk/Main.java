@@ -1,10 +1,12 @@
 package com.vdanyliuk;
 
+import com.vdanyliuk.data.DateBasedWeatherDataModel;
 import com.vdanyliuk.data.Holidays;
-import com.vdanyliuk.model.MatrixBuilder;
-import com.vdanyliuk.util.Average;
-import com.vdanyliuk.data.weather.WUndergroundWeatherParser;
+import com.vdanyliuk.data.weather.WUndergroundWeatherDataProvider;
 import com.vdanyliuk.data.weather.WeatherModel;
+import com.vdanyliuk.solver.EnergyLoadWeatherSolver;
+import com.vdanyliuk.solver.RegressionSolver;
+import com.vdanyliuk.util.Average;
 import org.apache.commons.math3.linear.*;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
@@ -45,7 +47,20 @@ public class Main {
     }
 
     public static void prepareFiles() throws IOException {
-        WUndergroundWeatherParser parser = new WUndergroundWeatherParser(getCloudsData());
+
+        WUndergroundWeatherDataProvider dataProvider = new WUndergroundWeatherDataProvider();
+
+        DateBasedWeatherDataModel dataModel = new DateBasedWeatherDataModel(dataProvider,
+                LocalDate.of(2015, 3, 1),
+                LocalDate.of(2016, 4, 2));
+
+        RegressionSolver<WeatherModel> solver = new EnergyLoadWeatherSolver(dataModel, dataModel);
+
+        LocalDate tomorrow = LocalDate.now().plusDays(1);
+
+        WeatherModel tomorrowData = dataProvider.getWeather(tomorrow, tomorrow);
+
+
 
         Map<LocalDate, Double> load = getLoad();
         Holidays holidays = new Holidays();
@@ -85,10 +100,10 @@ public class Main {
         System.out.println("squareSum = " + DoubleStream.of(dy.toArray()).map(d -> d * d).sum());
         System.out.println("median = " + DoubleStream.of(dy.toArray()).map(Math::abs).sorted().skip(dy.getDimension()/2).findFirst().orElseGet(() -> 0.0));
         System.out.println("count = " + allCount);
-        System.out.printf("max dy = %.3f%n", DoubleStream.of(dya).map(Math::abs).max().orElseGet(() -> 0.0));
-        System.out.printf("dy < 2%% count = %.1f%%%n", DoubleStream.of(dya).map(Math::abs).filter(d -> d < 0.02).count()/(double)allCount*100);
-        System.out.printf("dy < 1%% count = %.1f%%%n", DoubleStream.of(dya).map(Math::abs).filter(d -> d < 0.01).count()/(double)allCount*100);
-        System.out.printf("dy < 0.5%% count = %.1f%%%n", DoubleStream.of(dya).map(Math::abs).filter(d -> d < 0.005).count()/(double)allCount*100);
+        System.out.printf("max dy = %.2f%n", DoubleStream.of(dya).map(Math::abs).max().orElseGet(() -> 0.0));
+        System.out.printf("dy < 10%% count = %.1f%%%n", DoubleStream.of(dya).map(Math::abs).filter(d -> d < 0.1).count()/(double)allCount*100);
+        System.out.printf("dy < 5%% count = %.1f%%%n", DoubleStream.of(dya).map(Math::abs).filter(d -> d < 0.05).count()/(double)allCount*100);
+        System.out.printf("dy < 3%% count = %.1f%%%n", DoubleStream.of(dya).map(Math::abs).filter(d -> d < 0.03).count()/(double)allCount*100);
         System.out.println("=======================================");
 
 
@@ -192,19 +207,18 @@ public class Main {
                 .addParameter(getIntegralParam(map, model, "wind", 3), signedSquare)
                 .addParameter(getIntegralParam(map, model, "wind", 3), cubic)
 
+
                 .addParameter(getIntegralParam(map, model, "pressure", 3), same)
+
 
                 //Holidays
                 .addParameter(holidays.religious(model.getDate()), d -> d * -100)
                 .addParameter(holidays.state(model.getDate()), d -> d * -100)
                 .addParameter(holidays.school(model.getDate()), d -> d * -100)
 
-                .addParameter(holidays.religious(model.getDate())*holidays.religious(model.getDate().minusDays(2))*holidays.religious(model.getDate().minusDays(1)), d -> d * -100)
-                .addParameter(holidays.religious(model.getDate())+holidays.religious(model.getDate().minusDays(2))+holidays.religious(model.getDate().minusDays(1)), d -> d * -100)
-                .addParameter(holidays.religious(model.getDate())*holidays.state(model.getDate().minusDays(2))*holidays.state(model.getDate().minusDays(1)), d -> d * -100)
-
-                .addParameter(holidays.state(model.getDate().minusDays(1)), d -> d * -100)
-                //.addParameter(holidays.state(model.getDate().plusDays(1)), d -> d * -100)
+                .addParameter(holidays.religious(model.getDate())*holidays.religious(model.getDate().minusDays(1))*holidays.religious(model.getDate().plusDays(1)), d -> d * -100)
+                .addParameter(holidays.religious(model.getDate())+holidays.religious(model.getDate().minusDays(1))+holidays.religious(model.getDate().plusDays(1)), d -> d * -100)
+                .addParameter(holidays.religious(model.getDate())*holidays.state(model.getDate().minusDays(1))*holidays.state(model.getDate().plusDays(1)), d -> d * -100)
 
 
                 //Regular weather parameters
@@ -269,10 +283,6 @@ public class Main {
                 .addParameter(getIntegralParam(map, model, "avgTemperature", 6) * holidays.school(model.getDate()), d -> -d)
                 .addParameter(getIntegralParam(map, model, "avgTemperature", 6) * holidays.school(model.getDate()), cubic)
 
-                .addParameter(getIntegralParam(map, model, "avgTemperature", 6) * holidays.state(model.getDate()), signedSquare)
-                .addParameter(getIntegralParam(map, model, "avgTemperature", 6) * holidays.religious(model.getDate()), signedSquare)
-                .addParameter(getIntegralParam(map, model, "avgTemperature", 6) * holidays.school(model.getDate()), signedSquare)
-
                 .addParameter(model.getAvgTemperature() * holidays.state(model.getDate()), d -> -d)
                 .addParameter(model.getAvgTemperature() * holidays.state(model.getDate()), cubic)
                 .addParameter(model.getAvgTemperature() * holidays.religious(model.getDate()), d -> -d)
@@ -286,11 +296,6 @@ public class Main {
                 .addParameter(getIntegralParam(map, model, "clouds", 3) * holidays.religious(model.getDate()), cubic)
                 .addParameter(getIntegralParam(map, model, "clouds", 3) * holidays.school(model.getDate()), d -> -d)
                 .addParameter(getIntegralParam(map, model, "clouds", 3) * holidays.school(model.getDate()), cubic)
-
-                .addParameter(getIntegralParam(map, model, "clouds", 3) * holidays.state(model.getDate()), signedSquare)
-                .addParameter(getIntegralParam(map, model, "clouds", 3) * holidays.religious(model.getDate()), signedSquare)
-                .addParameter(getIntegralParam(map, model, "clouds", 3) * holidays.school(model.getDate()), signedSquare)
-
 
                 .addParameter(model.getClouds() * holidays.state(model.getDate()), d -> -d)
                 .addParameter(model.getClouds() * holidays.state(model.getDate()), cubic)
@@ -306,10 +311,6 @@ public class Main {
                 .addParameter(getIntegralParam(map, model, "wind", 4) * holidays.school(model.getDate()), d -> -d)
                 .addParameter(getIntegralParam(map, model, "wind", 4) * holidays.school(model.getDate()), cubic)
 
-                .addParameter(getIntegralParam(map, model, "wind", 4) * holidays.state(model.getDate()), signedSquare)
-                .addParameter(getIntegralParam(map, model, "wind", 4) * holidays.religious(model.getDate()), signedSquare)
-                .addParameter(getIntegralParam(map, model, "wind", 4) * holidays.school(model.getDate()), signedSquare)
-
                 .addParameter(model.getWind() * holidays.state(model.getDate()), d -> -d)
                 .addParameter(model.getWind() * holidays.state(model.getDate()), cubic)
                 .addParameter(model.getWind() * holidays.religious(model.getDate()), d -> -d)
@@ -323,10 +324,6 @@ public class Main {
                 .addParameter(getIntegralParam(map, model, "precipitation", 4) * holidays.religious(model.getDate()), cubic)
                 .addParameter(getIntegralParam(map, model, "precipitation", 4) * holidays.school(model.getDate()), d -> -d)
                 .addParameter(getIntegralParam(map, model, "precipitation", 4) * holidays.school(model.getDate()), cubic)
-
-                .addParameter(getIntegralParam(map, model, "precipitation", 4) * holidays.state(model.getDate()), signedSquare)
-                .addParameter(getIntegralParam(map, model, "precipitation", 4) * holidays.religious(model.getDate()), signedSquare)
-                .addParameter(getIntegralParam(map, model, "precipitation", 4) * holidays.school(model.getDate()), signedSquare)
 
                 .addParameter(model.getPrecipitation() * holidays.state(model.getDate()), d -> -d)
                 .addParameter(model.getPrecipitation() * holidays.state(model.getDate()), cubic)
@@ -342,66 +339,12 @@ public class Main {
                 .addParameter(getIntegralParam(map, model, "avgHumidity", 3) * holidays.school(model.getDate()), d -> -d)
                 .addParameter(getIntegralParam(map, model, "avgHumidity", 3) * holidays.school(model.getDate()), cubic)
 
-                .addParameter(getIntegralParam(map, model, "avgHumidity", 3) * holidays.state(model.getDate()), signedSquare)
-                .addParameter(getIntegralParam(map, model, "avgHumidity", 3) * holidays.religious(model.getDate()), signedSquare)
-                .addParameter(getIntegralParam(map, model, "avgHumidity", 3) * holidays.school(model.getDate()), signedSquare)
-
                 .addParameter(model.getAvgHumidity() * holidays.state(model.getDate()), d -> -d)
                 .addParameter(model.getAvgHumidity() * holidays.state(model.getDate()), cubic)
                 .addParameter(model.getAvgHumidity() * holidays.religious(model.getDate()), d -> -d)
                 .addParameter(model.getAvgHumidity() * holidays.religious(model.getDate()), cubic)
                 .addParameter(model.getAvgHumidity() * holidays.school(model.getDate()), d -> -d)
                 .addParameter(model.getAvgHumidity() * holidays.school(model.getDate()), cubic)
-
-                .addParameter(getIntegralParam(map, model, "visibility", 3) * holidays.state(model.getDate()), d -> -d)
-                .addParameter(getIntegralParam(map, model, "visibility", 3) * holidays.state(model.getDate()), cubic)
-                .addParameter(getIntegralParam(map, model, "visibility", 3) * holidays.religious(model.getDate()), d -> -d)
-                .addParameter(getIntegralParam(map, model, "visibility", 3) * holidays.religious(model.getDate()), cubic)
-                .addParameter(getIntegralParam(map, model, "visibility", 3) * holidays.school(model.getDate()), d -> -d)
-                .addParameter(getIntegralParam(map, model, "visibility", 3) * holidays.school(model.getDate()), cubic)
-
-                .addParameter(getIntegralParam(map, model, "visibility", 3) * holidays.state(model.getDate()), signedSquare)
-                .addParameter(getIntegralParam(map, model, "visibility", 3) * holidays.religious(model.getDate()), signedSquare)
-                .addParameter(getIntegralParam(map, model, "visibility", 3) * holidays.school(model.getDate()), signedSquare)
-
-                .addParameter(model.getVisibility() * holidays.state(model.getDate()), d -> -d)
-                .addParameter(model.getVisibility() * holidays.state(model.getDate()), cubic)
-                .addParameter(model.getVisibility() * holidays.religious(model.getDate()), d -> -d)
-                .addParameter(model.getVisibility() * holidays.religious(model.getDate()), cubic)
-                .addParameter(model.getVisibility() * holidays.school(model.getDate()), d -> -d)
-                .addParameter(model.getVisibility() * holidays.school(model.getDate()), cubic)
-
-                .addParameter(getIntegralParam(map, model, "dewPoint", 4) * holidays.state(model.getDate()), d -> -d)
-                .addParameter(getIntegralParam(map, model, "dewPoint", 4) * holidays.state(model.getDate()), cubic)
-                .addParameter(getIntegralParam(map, model, "dewPoint", 4) * holidays.religious(model.getDate()), d -> -d)
-                .addParameter(getIntegralParam(map, model, "dewPoint", 4) * holidays.religious(model.getDate()), cubic)
-                .addParameter(getIntegralParam(map, model, "dewPoint", 4) * holidays.school(model.getDate()), d -> -d)
-                .addParameter(getIntegralParam(map, model, "dewPoint", 4) * holidays.school(model.getDate()), cubic)
-
-                .addParameter(getIntegralParam(map, model, "dewPoint", 4) * holidays.state(model.getDate()), signedSquare)
-                .addParameter(getIntegralParam(map, model, "dewPoint", 4) * holidays.religious(model.getDate()), signedSquare)
-                .addParameter(getIntegralParam(map, model, "dewPoint", 4) * holidays.school(model.getDate()), signedSquare)
-
-                .addParameter(model.getDewPoint() * holidays.state(model.getDate()), d -> -d)
-                .addParameter(model.getDewPoint() * holidays.state(model.getDate()), cubic)
-                .addParameter(model.getDewPoint() * holidays.religious(model.getDate()), d -> -d)
-                .addParameter(model.getDewPoint() * holidays.religious(model.getDate()), cubic)
-                .addParameter(model.getDewPoint() * holidays.school(model.getDate()), d -> -d)
-                .addParameter(model.getDewPoint() * holidays.school(model.getDate()), cubic)
-
-                .addParameter(model.getAstronomicalDayLong() * model.getAvgTemperature(), same)
-                .addParameter(model.getAstronomicalDayLong() * model.getAvgTemperature(), signedSquare)
-                .addParameter(model.getAstronomicalDayLong() * model.getAvgTemperature(), cubic)
-
-                .addParameter(model.getAstronomicalDayLong() * model.getClouds(), same)
-                .addParameter(model.getAstronomicalDayLong() * model.getClouds(), signedSquare)
-                .addParameter(model.getAstronomicalDayLong() * model.getClouds(), cubic)
-
-                .addParameter(model.getAstronomicalDayLong() * model.getPrecipitation(), same)
-                .addParameter(model.getAstronomicalDayLong() * model.getPrecipitation(), signedSquare)
-                .addParameter(model.getAstronomicalDayLong() * model.getPrecipitation(), cubic)
-
-                .addParameter(model.getDate().isBefore(LocalDate.of(2015, 9, 1)) && model.getDate().isAfter(LocalDate.of(2015, 5, 31)) ? 20.0 : 0.0, same)
 
                 .addParameter(model.getAstronomicalDayLong() * holidays.state(model.getDate()), d -> -d)
                 .addParameter(model.getAstronomicalDayLong() * holidays.state(model.getDate()), cubic)
@@ -424,112 +367,12 @@ public class Main {
                 .addParameter(model.getSunSetBeforeWork() * holidays.school(model.getDate()), d -> -d)
                 .addParameter(model.getSunSetBeforeWork() * holidays.school(model.getDate()), cubic)
 
-                .addParameter((model.getSunSetBeforeWork()*model.getClouds()), same)
-                .addParameter((model.getSunRiseBeforeWork()*model.getClouds()), same)
-                .addParameter((model.getSunSetBeforeWork()*model.getClouds()), signedSquare)
-                .addParameter((model.getSunRiseBeforeWork()*model.getClouds()), signedSquare)
-                .addParameter((model.getSunSetBeforeWork()*model.getClouds()), cubic)
-                .addParameter((model.getSunRiseBeforeWork()*model.getClouds()), cubic)
-
-                .addParameter((model.getSunSetBeforeWork()*getIntegralParam(map, model, "clouds", 3)), same)
-                .addParameter((model.getSunRiseBeforeWork()*getIntegralParam(map, model, "clouds", 3)), same)
-                .addParameter((model.getSunSetBeforeWork()*getIntegralParam(map, model, "clouds", 3)), signedSquare)
-                .addParameter((model.getSunRiseBeforeWork()*getIntegralParam(map, model, "clouds", 3)), signedSquare)
-                .addParameter((model.getSunSetBeforeWork()*getIntegralParam(map, model, "clouds", 3)), cubic)
-                .addParameter((model.getSunRiseBeforeWork()*getIntegralParam(map, model, "clouds", 3)), cubic)
-
-                .addParameter((model.getSunSetBeforeWork()*model.getAvgTemperature()), same)
-                .addParameter((model.getSunRiseBeforeWork()*model.getAvgTemperature()), same)
-                .addParameter((model.getSunSetBeforeWork()*model.getAvgTemperature()), signedSquare)
-                .addParameter((model.getSunRiseBeforeWork()*model.getAvgTemperature()), signedSquare)
-                .addParameter((model.getSunSetBeforeWork()*model.getAvgTemperature()), cubic)
-                .addParameter((model.getSunRiseBeforeWork()*model.getAvgTemperature()), cubic)
-
-                .addParameter((model.getSunSetBeforeWork()*getIntegralParam(map, model, "avgTemperature", 6)), same)
-                .addParameter((model.getSunRiseBeforeWork()*getIntegralParam(map, model, "avgTemperature", 6)), same)
-                .addParameter((model.getSunSetBeforeWork()*getIntegralParam(map, model, "avgTemperature", 6)), signedSquare)
-                .addParameter((model.getSunRiseBeforeWork()*getIntegralParam(map, model, "avgTemperature", 6)), signedSquare)
-                .addParameter((model.getSunSetBeforeWork()*getIntegralParam(map, model, "avgTemperature", 6)), cubic)
-                .addParameter((model.getSunRiseBeforeWork()*getIntegralParam(map, model, "avgTemperature", 6)), cubic)
-
-                .addParameter((model.getSunSetBeforeWork()*model.getWind()), same)
-                .addParameter((model.getSunRiseBeforeWork()*model.getWind()), same)
-                .addParameter((model.getSunSetBeforeWork()*model.getWind()), signedSquare)
-                .addParameter((model.getSunRiseBeforeWork()*model.getWind()), signedSquare)
-                .addParameter((model.getSunSetBeforeWork()*model.getWind()), cubic)
-                .addParameter((model.getSunRiseBeforeWork()*model.getWind()), cubic)
-
-                .addParameter((model.getSunSetBeforeWork()*getIntegralParam(map, model, "wind", 3)), same)
-                .addParameter((model.getSunRiseBeforeWork()*getIntegralParam(map, model, "wind", 3)), same)
-                .addParameter((model.getSunSetBeforeWork()*getIntegralParam(map, model, "wind", 3)), signedSquare)
-                .addParameter((model.getSunRiseBeforeWork()*getIntegralParam(map, model, "wind", 3)), signedSquare)
-                .addParameter((model.getSunSetBeforeWork()*getIntegralParam(map, model, "wind", 3)), cubic)
-                .addParameter((model.getSunRiseBeforeWork()*getIntegralParam(map, model, "wind", 3)), cubic)
-
-                .addParameter((model.getSunSetBeforeWork()*model.getPrecipitation()), same)
-                .addParameter((model.getSunRiseBeforeWork()*model.getPrecipitation()), same)
-                .addParameter((model.getSunSetBeforeWork()*model.getPrecipitation()), signedSquare)
-                .addParameter((model.getSunRiseBeforeWork()*model.getPrecipitation()), signedSquare)
-                .addParameter((model.getSunSetBeforeWork()*model.getPrecipitation()), cubic)
-                .addParameter((model.getSunRiseBeforeWork()*model.getPrecipitation()), cubic)
-
-                .addParameter((model.getSunSetBeforeWork()*getIntegralParam(map, model, "precipitation", 3)), same)
-                .addParameter((model.getSunRiseBeforeWork()*getIntegralParam(map, model, "precipitation", 3)), same)
-                .addParameter((model.getSunSetBeforeWork()*getIntegralParam(map, model, "precipitation", 3)), signedSquare)
-                .addParameter((model.getSunRiseBeforeWork()*getIntegralParam(map, model, "precipitation", 3)), signedSquare)
-                .addParameter((model.getSunSetBeforeWork()*getIntegralParam(map, model, "precipitation", 3)), cubic)
-                .addParameter((model.getSunRiseBeforeWork()*getIntegralParam(map, model, "precipitation", 3)), cubic)
-
-                .addParameter((model.getSunSetBeforeWork()*model.getPressure()), same)
-                .addParameter((model.getSunRiseBeforeWork()*model.getPressure()), same)
-                .addParameter((model.getSunSetBeforeWork()*model.getPressure()), signedSquare)
-                .addParameter((model.getSunRiseBeforeWork()*model.getPressure()), signedSquare)
-                .addParameter((model.getSunSetBeforeWork()*model.getPressure()), cubic)
-                .addParameter((model.getSunRiseBeforeWork()*model.getPressure()), cubic)
-
-                .addParameter((model.getSunSetBeforeWork()*getIntegralParam(map, model, "pressure", 3)), same)
-                .addParameter((model.getSunRiseBeforeWork()*getIntegralParam(map, model, "pressure", 3)), same)
-                .addParameter((model.getSunSetBeforeWork()*getIntegralParam(map, model, "pressure", 3)), signedSquare)
-                .addParameter((model.getSunRiseBeforeWork()*getIntegralParam(map, model, "pressure", 3)), signedSquare)
-                .addParameter((model.getSunSetBeforeWork()*getIntegralParam(map, model, "pressure", 3)), cubic)
-                .addParameter((model.getSunRiseBeforeWork()*getIntegralParam(map, model, "pressure", 3)), cubic)
-
-                .addParameter((model.getSunSetBeforeWork()*model.getDewPoint()), same)
-                .addParameter((model.getSunRiseBeforeWork()*model.getDewPoint()), same)
-                .addParameter((model.getSunSetBeforeWork()*model.getDewPoint()), signedSquare)
-                .addParameter((model.getSunRiseBeforeWork()*model.getDewPoint()), signedSquare)
-                .addParameter((model.getSunSetBeforeWork()*model.getDewPoint()), cubic)
-                .addParameter((model.getSunRiseBeforeWork()*model.getDewPoint()), cubic)
-
-                .addParameter((model.getSunSetBeforeWork()*getIntegralParam(map, model, "dewPoint", 3)), same)
-                .addParameter((model.getSunRiseBeforeWork()*getIntegralParam(map, model, "dewPoint", 3)), same)
-                .addParameter((model.getSunSetBeforeWork()*getIntegralParam(map, model, "dewPoint", 3)), signedSquare)
-                .addParameter((model.getSunRiseBeforeWork()*getIntegralParam(map, model, "dewPoint", 3)), signedSquare)
-                .addParameter((model.getSunSetBeforeWork()*getIntegralParam(map, model, "dewPoint", 3)), cubic)
-                .addParameter((model.getSunRiseBeforeWork()*getIntegralParam(map, model, "dewPoint", 3)), cubic)
-
-                .addParameter((model.getSunSetBeforeWork()*model.getVisibility()), same)
-                .addParameter((model.getSunRiseBeforeWork()*model.getVisibility()), same)
-                .addParameter((model.getSunSetBeforeWork()*model.getVisibility()), signedSquare)
-                .addParameter((model.getSunRiseBeforeWork()*model.getVisibility()), signedSquare)
-                .addParameter((model.getSunSetBeforeWork()*model.getVisibility()), cubic)
-                .addParameter((model.getSunRiseBeforeWork()*model.getVisibility()), cubic)
-
-                .addParameter((model.getSunSetBeforeWork()*getIntegralParam(map, model, "visibility", 3)), same)
-                .addParameter((model.getSunRiseBeforeWork()*getIntegralParam(map, model, "visibility", 3)), same)
-                .addParameter((model.getSunSetBeforeWork()*getIntegralParam(map, model, "visibility", 3)), signedSquare)
-                .addParameter((model.getSunRiseBeforeWork()*getIntegralParam(map, model, "visibility", 3)), signedSquare)
-
-
-                .addParameter((model.getSunSetBeforeWork() - isDayLightSaving(model.getDate())*3600), signedSquare)
-                .addParameter((model.getSunRiseBeforeWork() + isDayLightSaving(model.getDate())*3600), signedSquare)
-                .addParameter((model.getSunSetBeforeWork() - isDayLightSaving(model.getDate())*3600), cubic)
-                .addParameter((model.getSunRiseBeforeWork() + isDayLightSaving(model.getDate())*3600), cubic)
-
-                .addParameter((model.getSunSetBeforeWork() - isDayLightSaving(model.getDate())*3600*model.getClouds()), signedSquare)
-                .addParameter((model.getSunRiseBeforeWork() + isDayLightSaving(model.getDate())*3600*model.getClouds()), signedSquare)
-                .addParameter((model.getSunSetBeforeWork() - isDayLightSaving(model.getDate())*3600*model.getClouds()), cubic)
-                .addParameter((model.getSunRiseBeforeWork() + isDayLightSaving(model.getDate())*3600*model.getClouds()), cubic)
+                .addParameter((model.getSunSetBeforeWork() + isDayLightSaving(model.getDate())*3600) * holidays.religious(model.getDate()), cubic)
+                .addParameter((model.getSunRiseBeforeWork() + isDayLightSaving(model.getDate())*3600) * holidays.religious(model.getDate()), cubic)
+                .addParameter((model.getSunSetBeforeWork() - isDayLightSaving(model.getDate())*3600) * holidays.state(model.getDate()), cubic)
+                .addParameter((model.getSunRiseBeforeWork() - isDayLightSaving(model.getDate())*3600) * holidays.state(model.getDate()), cubic)
+                .addParameter((model.getSunSetBeforeWork() - isDayLightSaving(model.getDate())*3600) * holidays.school(model.getDate()), cubic)
+                .addParameter((model.getSunRiseBeforeWork() - isDayLightSaving(model.getDate())*3600) * holidays.school(model.getDate()), cubic)
                 ;
     }
 

@@ -13,7 +13,7 @@ import java.util.Properties;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({PropertiesUtil.class, Jsoup.class})
-public class WUndergroundWeatherParserTest {
+public class WUndergroundWeatherDataProviderTest {
 
     public static final Properties TEST_PROPERTIES = new Properties(){{
         setProperty("connection.url","http://ukrainian.wunderground.com/history/airport/UKLI/${Date}/DailyHistory.html");
@@ -28,13 +28,13 @@ public class WUndergroundWeatherParserTest {
 
     /*static {
         try {
-            DOCUMENT = Jsoup.parse(WUndergroundWeatherParserTest.class.getClassLoader().getResourceAsStream("test.html"), "utf8", "test.html");
+            DOCUMENT = Jsoup.parse(WUndergroundWeatherDataProviderTest.class.getClassLoader().getResourceAsStream("test.html"), "utf8", "test.html");
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private WUndergroundWeatherParser parser = new WUndergroundWeatherParser();
+    private WUndergroundWeatherDataProvider parser = new WUndergroundWeatherDataProvider();
 
     @Before
     public void init() throws Exception {

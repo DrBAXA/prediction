@@ -2,6 +2,7 @@ package com.vdanyliuk.util;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -48,12 +49,12 @@ public class ParserUtil {
         }
     }
 
-    public static double getMinutesValueForCssAndRegex(Document document, String cssPath, String regexAll, String regexHours, String regexMinutes) {
+    public static double getMinutesValueForCssAndRegex(Element document, String cssPath, String regexAll, String regexHours, String regexMinutes) {
         try {
             String textRepresentation = getStringByPattern(document.select(cssPath).text(), regexAll, 1);
             return 60 * Double.parseDouble(getStringByPattern(textRepresentation, regexHours, 1)) + Integer.parseInt(getStringByPattern(textRepresentation, regexMinutes, 1));
         } catch (PatternMatchingException patternMatchingException) {
-            log.warn("Can't get value for page url " + document.location() +
+            log.warn("Can't get value for page url " +
                     "\nCSSPath " + cssPath +
                     "\nRegex " + regexAll +
                     ".\nZero will be returned.");
