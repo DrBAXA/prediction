@@ -4,7 +4,7 @@ import org.junit.Test;
 
 import static com.vdanyliuk.util.ParserUtil.getMinutesValueForCssAndRegex;
 import static com.vdanyliuk.util.ParserUtil.getValueForCssAndRegex;
-import static com.vdanyliuk.weather.WUndergroundWeatherParserTest.DOCUMENT;
+import static com.vdanyliuk.data.weather.WUndergroundWeatherParserTest.DOCUMENT;
 import static junit.framework.TestCase.assertEquals;
 
 public class ParserUtilTest {

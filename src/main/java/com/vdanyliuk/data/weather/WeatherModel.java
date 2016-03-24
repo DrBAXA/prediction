@@ -1,4 +1,4 @@
-package com.vdanyliuk.weather;
+package com.vdanyliuk.data.weather;
 
 import lombok.Builder;
 import lombok.Data;

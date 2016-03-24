@@ -1,4 +1,4 @@
-package com.vdanyliuk;
+package com.vdanyliuk.data;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;

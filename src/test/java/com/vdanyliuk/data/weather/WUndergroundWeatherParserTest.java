@@ -1,4 +1,4 @@
-package com.vdanyliuk.weather;
+package com.vdanyliuk.data.weather;
 
 import com.vdanyliuk.util.PropertiesUtil;
 import org.jsoup.Connection;

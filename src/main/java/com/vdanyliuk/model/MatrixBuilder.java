@@ -1,4 +1,4 @@
-package com.vdanyliuk;
+package com.vdanyliuk.model;
 
 import lombok.AllArgsConstructor;
 

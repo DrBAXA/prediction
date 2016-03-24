@@ -1,8 +1,10 @@
 package com.vdanyliuk;
 
+import com.vdanyliuk.data.Holidays;
+import com.vdanyliuk.model.MatrixBuilder;
 import com.vdanyliuk.util.Average;
-import com.vdanyliuk.weather.WUndergroundWeatherParser;
-import com.vdanyliuk.weather.WeatherModel;
+import com.vdanyliuk.data.weather.WUndergroundWeatherParser;
+import com.vdanyliuk.data.weather.WeatherModel;
 import org.apache.commons.math3.linear.*;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;

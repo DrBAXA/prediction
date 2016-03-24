@@ -1,4 +1,4 @@
-package com.vdanyliuk.weather;
+package com.vdanyliuk.data.weather;
 
 import com.vdanyliuk.util.PropertiesUtil;
 import lombok.Getter;
@@ -34,12 +34,11 @@ public class WUndergroundWeatherParser implements WeatherParser {
 
     @Override
     public List<WeatherModel> getWeather(LocalDate startDate, LocalDate endDate) {
-        List<WeatherModel> res =  Stream.iterate(startDate, d -> d.plusDays(1))
+        List<WeatherModel> res = Stream.iterate(startDate, d -> d.plusDays(1))
                 .limit(ChronoUnit.DAYS.between(startDate, endDate))
                 .filter(d -> clouds.containsKey(d))
                 .map(d -> Optional.ofNullable(cache.get(d))
                         .orElseGet(() -> getWeather(getWeatherDayPage(d), d)))
-                //.peek(d -> log.info("Date " + d.getDate() + " done."))
                 .collect(Collectors.toList());
 
         saveCache(res.stream().collect(HashMap::new, (m, wm) -> m.put(wm.getDate(), wm), Map::putAll));
@@ -48,8 +47,8 @@ public class WUndergroundWeatherParser implements WeatherParser {
     }
 
     private void saveCache(Map<LocalDate, WeatherModel> cache) {
-        try(OutputStream outputStream = new FileOutputStream("data/cache.dat");
-            ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream)) {
+        try (OutputStream outputStream = new FileOutputStream("data/cache.dat");
+             ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream)) {
 
             this.cache.putAll(cache);
             objectOutputStream.writeObject(this.cache);
@@ -61,10 +60,10 @@ public class WUndergroundWeatherParser implements WeatherParser {
 
     @SuppressWarnings("unchecked")
     private Map<LocalDate, WeatherModel> loadCache() {
-        try(InputStream inputStream = new FileInputStream("data/cache.dat");
-            ObjectInputStream objectInputStream = new ObjectInputStream(inputStream)) {
+        try (InputStream inputStream = new FileInputStream("data/cache.dat");
+             ObjectInputStream objectInputStream = new ObjectInputStream(inputStream)) {
 
-            Map<LocalDate, WeatherModel> res =  (Map<LocalDate, WeatherModel>) objectInputStream.readObject();
+            Map<LocalDate, WeatherModel> res = (Map<LocalDate, WeatherModel>) objectInputStream.readObject();
             return Optional.ofNullable(res).orElseGet(HashMap::new);
 
         } catch (IOException | ClassNotFoundException e) {
@@ -85,11 +84,10 @@ public class WUndergroundWeatherParser implements WeatherParser {
         try {
             return getConnection(date).get();
         } catch (IOException e) {
-            if(tryCount < Integer.parseInt(properties.getProperty("connection.maxTryCount", "5"))){
+            if (tryCount < Integer.parseInt(properties.getProperty("connection.maxTryCount", "5"))) {
                 log.warn("Can't get page. Try to get one more time");
-                return getWeatherDayPage(date, tryCount+1);
-            }
-            else throw new RuntimeException("Can't load data from internet");
+                return getWeatherDayPage(date, tryCount + 1);
+            } else throw new RuntimeException("Can't load data from internet");
         }
     }
 
