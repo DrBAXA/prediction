@@ -1,9 +1,7 @@
 package com.vdanyliuk.data.weather;
 
-import java.time.LocalDate;
-import java.util.List;
+import com.vdanyliuk.data.DataProvider;
 
-public interface WeatherDataProvider {
+public interface WeatherDataProvider extends DataProvider<WeatherModel> {
 
-    List<WeatherModel> getWeather(LocalDate date, LocalDate date1);
 }

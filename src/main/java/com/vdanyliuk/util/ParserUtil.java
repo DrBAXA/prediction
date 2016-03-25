@@ -1,9 +1,11 @@
 package com.vdanyliuk.util;
 
 import lombok.extern.slf4j.Slf4j;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
+import java.io.IOException;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalQueries;
@@ -12,6 +14,15 @@ import java.util.regex.Pattern;
 
 @Slf4j
 public class ParserUtil {
+
+    public static Document getDocument(String url) {
+        try {
+            return Jsoup.connect(url).get();
+        } catch (IOException e) {
+            log.error("Can't get page " + url);
+            return null;
+        }
+    }
 
     public static String getStringByPattern(String src, String patternString, int groupNumber) throws PatternMatchingException {
         Pattern pattern = Pattern.compile(patternString);
@@ -23,12 +34,12 @@ public class ParserUtil {
         }
     }
 
-    public static LocalTime getTimeValueForCssAndRegex(Document document, String cssPath, String regex) {
+    public static LocalTime getTimeValueForCssAndRegex(Element document, String cssPath, String regex) {
         try {
             String textRepresentation = getStringByPattern(document.select(cssPath).text(), regex, 1);
             return DateTimeFormatter.ofPattern("kk:mm").parse(textRepresentation).query(TemporalQueries.localTime());
         } catch (PatternMatchingException patternMatchingException) {
-            log.warn("Can't get value for page url " + document.location() +
+            log.warn("Can't get value for page url " +
                     "\n\t\t\tCSSPath " + cssPath +
                     "\n\t\t\tRegex " + regex +
                     "\n\t\t\tZero will be returned.");
@@ -36,12 +47,12 @@ public class ParserUtil {
         }
     }
 
-    public static double getValueForCssAndRegex(Document document, String cssPath, String regex) {
+    public static double getValueForCssAndRegex(Element document, String cssPath, String regex) {
         try {
             String textRepresentation = getStringByPattern(document.select(cssPath).text(), regex, 1);
             return Double.parseDouble(textRepresentation);
         } catch (PatternMatchingException patternMatchingException) {
-            log.warn("Can't get value for page url " + document.location() +
+            log.warn("Can't get value for page url " +
                     "\n\t\t\tCSSPath " + cssPath +
                     "\n\t\t\tRegex " + regex +
                     "\n\t\t\tZero will be returned.");

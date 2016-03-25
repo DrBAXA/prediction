@@ -1,8 +1,6 @@
 package com.vdanyliuk.data.weather;
 
 import com.vdanyliuk.util.Average;
-import com.vdanyliuk.util.PropertiesUtil;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
@@ -14,7 +12,10 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -26,18 +27,20 @@ public class WUndergroundWeatherDataProvider implements WeatherDataProvider {
     private final static DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy/MM/dd");
     private final static String DEFAULT_URL = "http://ukrainian.wunderground.com/history/airport/UKLI/${Date}/DailyHistory.html";
 
-    @Getter
-    private Properties properties;
     private Map<LocalDate, Double> clouds;
     Map<LocalDate, WeatherModel> cache;
 
     public WUndergroundWeatherDataProvider() throws IOException {
-        properties = PropertiesUtil.loadProperties("wunderground.properties");
         this.clouds = getCloudsData();
         cache = loadCache();
     }
 
     @Override
+    public WeatherModel getData(LocalDate date) {
+        return Optional.ofNullable(cache.get(date))
+                .orElseGet(() ->getWeather(getWeatherDayPage(date), date));
+    }
+
     public List<WeatherModel> getWeather(LocalDate startDate, LocalDate endDate) {
         List<WeatherModel> res = Stream.iterate(startDate, d -> d.plusDays(1))
                 .limit(ChronoUnit.DAYS.between(startDate, endDate))
@@ -49,24 +52,6 @@ public class WUndergroundWeatherDataProvider implements WeatherDataProvider {
         saveCache(res.stream().collect(HashMap::new, (m, wm) -> m.put(wm.getDate(), wm), Map::putAll));
 
         return res;
-    }
-
-    @Override
-    public WeatherModel getWeather(LocalDate date) {
-        double clouds = Optionalclouds.containsKey(date)
-                .map(d -> Optional.ofNullable(cache.get(d))
-                        .orElseGet(() -> getWeather(getWeatherDayPage(d), d)))
-                .collect(Collectors.toList());
-
-        saveCache(res.stream().collect(HashMap::new, (m, wm) -> m.put(wm.getDate(), wm), Map::putAll));
-
-        return res;
-    }
-
-    private double getClouds(LocalDate date) {
-        return Optional
-                .ofNullable(clouds.get(date))
-                .orElseGet()
     }
 
     private void saveCache(Map<LocalDate, WeatherModel> cache) {
@@ -107,7 +92,7 @@ public class WUndergroundWeatherDataProvider implements WeatherDataProvider {
         try {
             return getConnection(date).get();
         } catch (IOException e) {
-            if (tryCount < Integer.parseInt(properties.getProperty("connection.maxTryCount", "5"))) {
+            if (tryCount < 5) {
                 log.warn("Can't get page. Try to get one more time");
                 return getWeatherDayPage(date, tryCount + 1);
             } else throw new RuntimeException("Can't load data from internet");
@@ -115,7 +100,7 @@ public class WUndergroundWeatherDataProvider implements WeatherDataProvider {
     }
 
     Connection getConnection(LocalDate date) {
-        String url = getUrlWithDate(properties.getProperty("connection.url", DEFAULT_URL), date);
+        String url = getUrlWithDate(DEFAULT_URL, date);
         return Jsoup.connect(url);
     }
 
@@ -136,5 +121,4 @@ public class WUndergroundWeatherDataProvider implements WeatherDataProvider {
                         (m, e) -> m.put(e.getKey(), e.getValue().get()),
                         HashMap::putAll);
     }
-
 }

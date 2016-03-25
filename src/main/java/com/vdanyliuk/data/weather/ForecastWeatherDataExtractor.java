@@ -1,95 +1,88 @@
 package com.vdanyliuk.data.weather;
 
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.vdanyliuk.data.Cache;
+import com.vdanyliuk.data.DataProvider;
+import com.vdanyliuk.data.astronomical.AstronomyData;
+import com.vdanyliuk.data.astronomical.StoredAstronomicalDataProvider;
+import com.vdanyliuk.data.weather.api.APIResponseToWeatherModelConverter;
+import com.vdanyliuk.data.weather.api.HourlyWeather;
+import lombok.extern.slf4j.Slf4j;
 
+import java.io.IOException;
+import java.net.URL;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
-import static com.vdanyliuk.util.ParserUtil.getMinutesValueForCssAndRegex;
-import static com.vdanyliuk.util.ParserUtil.getValueForCssAndRegex;
+@Slf4j
+public class ForecastWeatherDataExtractor implements WeatherDataProvider{
 
-public class ForecastWeatherDataExtractor {
+    private static final String URL = "https://api.forecast.io/forecast/80670f9deea5e66cd05bc243c5792921/48.9131692,24.7025118";
 
-    private Document document;
+    private DataProvider<AstronomyData> astronomyDataProvider;
+    private APIResponseToWeatherModelConverter modelConverter;
+    private ObjectMapper mapper;
 
-    public ForecastWeatherDataExtractor(Document document) {
-        this.document = document;
+    public ForecastWeatherDataExtractor(DataProvider<AstronomyData> astronomyDataProvider) {
+        this.astronomyDataProvider = astronomyDataProvider;
+        modelConverter = new APIResponseToWeatherModelConverter(astronomyDataProvider);
+        mapper = new ObjectMapper();
     }
 
-    public WeatherModel getWeather(LocalDate date) {
-        return WeatherModel.builder()
-                .astronomicalDayLong(getAstronomicalDayLong())
-                .dayLightLong(getDayLightLong())
-                .avgHumidity(getAvgHumidity())
-                .maxHumidity(getMaxHumidity())
-                .minHumidity(getMinHumidity())
-                .avgTemperature(getAvgTemperature())
-                .maxTemperature(getMaxTemperature())
-                .minTemperature(getMinTemperature())
-                .dewPoint(getDewPoint())
-                .precipitation(getPrecipitation())
-                .pressure(getPressure())
-                .wind(getWind())
-                .visibility(getVisibility())
-                .clouds(15)
-                .build();
+    public static void main(String[] args) {
+        DataProvider<AstronomyData> astronomyDataDataProvider = Cache.load("data/astronomy.dat", StoredAstronomicalDataProvider.class);
+
+        ForecastWeatherDataExtractor dataExtractor = new ForecastWeatherDataExtractor(astronomyDataDataProvider);
+        System.out.println(dataExtractor.getData(LocalDate.now().plusDays(1)));
     }
 
-    private Element getDayElement(LocalDate localDate) {
-        String id = "horizontal-day-" + (localDate.getDayOfYear() - 1);
-        return document.select("div#" + id).get(0);
+
+    @Override
+    public WeatherModel getData(LocalDate date) {
+        return modelConverter.convert(getHourlyWeather(date));
     }
 
-    double getAstronomicalDayLong(LocalDate localDate) {
-        return getMinutesValueForCssAndRegex(getDayElement(localDate), "div#astronomy-mod.wx-module.simple table tbody tr", "Тривалість дня\\s*(\\-?\\d+\\.?\\d*h\\s?\\-?\\d+\\.?\\d*m)", "(\\-?\\d+\\.?\\d*)h",  "(\\-?\\d+\\.?\\d*)m");
+    public List<HourlyWeather> getHourlyWeather(LocalDate date){
+        JsonNode response = getURL(URL);
+
+        JsonNode hourlyDataWraper = response.findValue("hourly");
+
+        ArrayNode hourlyData = (ArrayNode) hourlyDataWraper.findValue("data");
+
+        return StreamSupport
+                .stream(hourlyData.spliterator(), false)
+                .map(getNodeToPOJOMapper(mapper, HourlyWeather.class))
+                .filter(hw -> LocalDateTime.ofEpochSecond(hw.getTimestamp(), 0, ZoneOffset.ofHours(2)).toLocalDate().equals(date))
+                .collect(Collectors.toList());
+
     }
 
-    double getDayLightLong(LocalDate localDate) {
-        return getMinutesValueForCssAndRegex(getDayElement(localDate), "div#astronomy-mod.wx-module.simple table tbody tr", "Тривалість видимого світла\\s*(\\-?\\d+\\.?\\d*h\\s?\\-?\\d+\\.?\\d*m)", "(\\-?\\d+\\.?\\d*)h",  "(\\-?\\d+\\.?\\d*)m");
+    private JsonNode getURL(String url) {
+        try {
+            return mapper.readTree(new URL(URL));
+        } catch (IOException e) {
+            log.error("Can't get page " + url);
+            return null;
+        }
     }
 
-    double getAvgHumidity(LocalDate localDate) {
-        return getValueForCssAndRegex(getDayElement(localDate), "table#historyTable.responsive.airport-history-summary-table tbody tr", "Average Humidity\\s*(\\-?\\d+\\.?\\d*)");
+    private <T> Function<JsonNode, T> getNodeToPOJOMapper(ObjectMapper objectMapper, Class<T> pojoClass) {
+        return node -> {
+            try {
+                return objectMapper.treeToValue(node, pojoClass);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        };
     }
-
-    double getMaxHumidity(LocalDate localDate) {
-        return getValueForCssAndRegex(getDayElement(localDate), "table#historyTable.responsive.airport-history-summary-table tbody tr", "Maximum Humidity\\s*(\\-?\\d+\\.?\\d*)");
-    }
-
-    double getMinHumidity(LocalDate localDate) {
-        return getValueForCssAndRegex(getDayElement(localDate), "table#historyTable.responsive.airport-history-summary-table tbody tr", "Minimum Humidity\\s*(\\-?\\d+\\.?\\d*)");
-    }
-
-    double getAvgTemperature(LocalDate localDate) {
-        return getValueForCssAndRegex(getDayElement(localDate), "table#historyTable.responsive.airport-history-summary-table tbody tr", "Середня Температура\\s*(\\-?\\d+\\.?\\d*)");
-    }
-
-    double getMaxTemperature(LocalDate localDate) {
-        return getValueForCssAndRegex(getDayElement(localDate), "table#historyTable.responsive.airport-history-summary-table tbody tr", "Максимальна Температура\\s*(\\-?\\d+\\.?\\d*)");
-    }
-
-    double getMinTemperature(LocalDate localDate) {
-        return getValueForCssAndRegex(getDayElement(localDate), "table#historyTable.responsive.airport-history-summary-table tbody tr", "Мінімальна Температура\\s*(\\-?\\d+\\.?\\d*)");
-    }
-
-    double getDewPoint(LocalDate localDate) {
-        return getValueForCssAndRegex(getDayElement(localDate), "table#historyTable.responsive.airport-history-summary-table tbody tr", "Точка Роси\\s*(\\-?\\d+\\.?\\d*)");
-    }
-
-    double getPrecipitation(LocalDate localDate) {
-        return getValueForCssAndRegex(getDayElement(localDate), "table#historyTable.responsive.airport-history-summary-table tbody tr", "Опади\\s*(\\-?\\d+\\.?\\d*)");
-    }
-
-    double getPressure(LocalDate localDate) {
-        return getValueForCssAndRegex(getDayElement(localDate), "table#historyTable.responsive.airport-history-summary-table tbody tr", "Атмосферний Тиск\\s*(\\-?\\d+\\.?\\d*)");
-    }
-
-    double getWind(LocalDate localDate) {
-        return getValueForCssAndRegex(getDayElement(localDate), "table#historyTable.responsive.airport-history-summary-table tbody tr", "Швидкість Вітру\\s*(\\-?\\d+\\.?\\d*)");
-    }
-
-    double getVisibility(LocalDate localDate) {
-        return getValueForCssAndRegex(getDayElement(localDate), "table#historyTable.responsive.airport-history-summary-table tbody tr", "Видимість\\s*(\\-?\\d+\\.?\\d*)");
-    }
+    
 
 }

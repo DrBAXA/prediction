@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.UnaryOperator;
@@ -482,8 +483,11 @@ public class DateBasedWeatherDataModel implements IndependentDataModel<WeatherMo
     }
 
     private Map<LocalDate, WeatherModel> getWeather(LocalDate startDate, LocalDate endDate) {
-        return weatherDataProvider.getWeather(startDate, endDate).stream()
+        return Stream
+                .iterate(startDate, d -> d.plusDays(1))
+                .limit(ChronoUnit.DAYS.between(startDate, endDate))
                 .filter(loadData::containsKey)
+                .map(d -> weatherDataProvider.getData(d))
                 .collect(HashMap::new, (m, wm) -> m.put(wm.getDate(), wm), Map::putAll);
     }
 }
