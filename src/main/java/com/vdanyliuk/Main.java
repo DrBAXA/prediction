@@ -1,6 +1,12 @@
 package com.vdanyliuk;
 
+import com.vdanyliuk.data.Cache;
+import com.vdanyliuk.data.DataProvider;
 import com.vdanyliuk.data.DateBasedWeatherDataModel;
+import com.vdanyliuk.data.astronomical.AstronomyData;
+import com.vdanyliuk.data.astronomical.StoredAstronomicalDataProvider;
+import com.vdanyliuk.data.weather.ForecastWeatherDataExtractor;
+import com.vdanyliuk.data.weather.VisibilityDataProvider;
 import com.vdanyliuk.data.weather.WUndergroundWeatherDataProvider;
 import com.vdanyliuk.data.weather.WeatherModel;
 import com.vdanyliuk.solver.EnergyLoadWeatherSolver;
@@ -26,6 +32,9 @@ public class Main {
     public static void prepareFiles() throws IOException {
 
         WUndergroundWeatherDataProvider dataProvider = new WUndergroundWeatherDataProvider();
+        DataProvider<AstronomyData> astronomyDataProvider = Cache.load("data/astronomy.dat", StoredAstronomicalDataProvider.class);
+        DataProvider<Double>  visibilityDataProvider = new VisibilityDataProvider();
+        ForecastWeatherDataExtractor forecastWeatherDataExtractor = new ForecastWeatherDataExtractor(astronomyDataProvider, visibilityDataProvider);
 
         DateBasedWeatherDataModel dataModel = new DateBasedWeatherDataModel(dataProvider,
                 LocalDate.of(2015, 3, 1),
@@ -35,8 +44,9 @@ public class Main {
 
         LocalDate tomorrow = LocalDate.now().plusDays(1);
 
-        //WeatherModel tomorrowData = dataProvider.getWeather(tomorrow, tomorrow);
+        WeatherModel tomorrowData = forecastWeatherDataExtractor.getData(tomorrow);
 
+        System.out.println(solver.solve(tomorrowData));
 
     }
 

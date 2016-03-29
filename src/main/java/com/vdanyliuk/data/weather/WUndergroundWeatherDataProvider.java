@@ -11,13 +11,9 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Slf4j
 public class WUndergroundWeatherDataProvider implements WeatherDataProvider {
@@ -39,19 +35,6 @@ public class WUndergroundWeatherDataProvider implements WeatherDataProvider {
     public WeatherModel getData(LocalDate date) {
         return Optional.ofNullable(cache.get(date))
                 .orElseGet(() ->getWeather(getWeatherDayPage(date), date));
-    }
-
-    public List<WeatherModel> getWeather(LocalDate startDate, LocalDate endDate) {
-        List<WeatherModel> res = Stream.iterate(startDate, d -> d.plusDays(1))
-                .limit(ChronoUnit.DAYS.between(startDate, endDate))
-                .filter(d -> clouds.containsKey(d))
-                .map(d -> Optional.ofNullable(cache.get(d))
-                        .orElseGet(() -> getWeather(getWeatherDayPage(d), d)))
-                .collect(Collectors.toList());
-
-        saveCache(res.stream().collect(HashMap::new, (m, wm) -> m.put(wm.getDate(), wm), Map::putAll));
-
-        return res;
     }
 
     private void saveCache(Map<LocalDate, WeatherModel> cache) {

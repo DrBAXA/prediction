@@ -15,11 +15,14 @@ import java.util.function.UnaryOperator;
 public class APIResponseToWeatherModelConverter {
 
     private DataProvider<AstronomyData> astronomyDataDataProvider;
+    private DataProvider<Double> visibilityDataProvider;
+
 
     private UnaryOperator<Double> FARENGATE_TO_CELSIUS = f -> (f-32)/1.8;
 
-    public APIResponseToWeatherModelConverter(DataProvider<AstronomyData> astronomyDataDataProvider) {
+    public APIResponseToWeatherModelConverter(DataProvider<AstronomyData> astronomyDataDataProvider, DataProvider<Double> visibilityDataProvider) {
         this.astronomyDataDataProvider = astronomyDataDataProvider;
+        this.visibilityDataProvider = visibilityDataProvider;
     }
 
     public WeatherModel convert(Collection<HourlyWeather> hourlyWeather) {
@@ -48,7 +51,7 @@ public class APIResponseToWeatherModelConverter {
                 .dewPoint(weather.getDewPoint())
                 .pressure(weather.getPressure())
                 .precipitation(weather.getPerception())
-                .visibility(weather.getVisibility())
+                .visibility(visibilityDataProvider.getData(date))
                 .wind(weather.getWind())
 
                 .astronomicalDayLong(astronomyData.getAstronomicalDayLong())

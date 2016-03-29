@@ -27,20 +27,18 @@ public class ForecastWeatherDataExtractor implements WeatherDataProvider{
 
     private static final String URL = "https://api.forecast.io/forecast/80670f9deea5e66cd05bc243c5792921/48.9131692,24.7025118";
 
-    private DataProvider<AstronomyData> astronomyDataProvider;
     private APIResponseToWeatherModelConverter modelConverter;
     private ObjectMapper mapper;
 
-    public ForecastWeatherDataExtractor(DataProvider<AstronomyData> astronomyDataProvider) {
-        this.astronomyDataProvider = astronomyDataProvider;
-        modelConverter = new APIResponseToWeatherModelConverter(astronomyDataProvider);
+    public ForecastWeatherDataExtractor(DataProvider<AstronomyData> astronomyDataProvider, DataProvider<Double> visibilityDataProvider) {
+        modelConverter = new APIResponseToWeatherModelConverter(astronomyDataProvider, visibilityDataProvider);
         mapper = new ObjectMapper();
     }
 
     public static void main(String[] args) {
         DataProvider<AstronomyData> astronomyDataDataProvider = Cache.load("data/astronomy.dat", StoredAstronomicalDataProvider.class);
-
-        ForecastWeatherDataExtractor dataExtractor = new ForecastWeatherDataExtractor(astronomyDataDataProvider);
+        DataProvider<Double>  visibilityDataProvider = new VisibilityDataProvider();
+        ForecastWeatherDataExtractor dataExtractor = new ForecastWeatherDataExtractor(astronomyDataDataProvider, visibilityDataProvider);
         System.out.println(dataExtractor.getData(LocalDate.now().plusDays(1)));
     }
 
@@ -53,9 +51,9 @@ public class ForecastWeatherDataExtractor implements WeatherDataProvider{
     public List<HourlyWeather> getHourlyWeather(LocalDate date){
         JsonNode response = getURL(URL);
 
-        JsonNode hourlyDataWraper = response.findValue("hourly");
+        JsonNode hourlyDataWrapper = response.findValue("hourly");
 
-        ArrayNode hourlyData = (ArrayNode) hourlyDataWraper.findValue("data");
+        ArrayNode hourlyData = (ArrayNode) hourlyDataWrapper.findValue("data");
 
         return StreamSupport
                 .stream(hourlyData.spliterator(), false)
