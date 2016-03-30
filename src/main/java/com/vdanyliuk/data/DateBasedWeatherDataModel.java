@@ -445,10 +445,10 @@ public class DateBasedWeatherDataModel implements IndependentDataModel<WeatherMo
                 .addParameter((model.getSunSetBeforeWork() - isDayLightSaving(model.getDate()) * 3600), cubic)
                 .addParameter((model.getSunRiseBeforeWork() + isDayLightSaving(model.getDate()) * 3600), cubic)
 
-                .addParameter((model.getSunSetBeforeWork() - isDayLightSaving(model.getDate()) * 3600 * model.getClouds()), signedSquare)
-                .addParameter((model.getSunRiseBeforeWork() + isDayLightSaving(model.getDate()) * 3600 * model.getClouds()), signedSquare)
-                .addParameter((model.getSunSetBeforeWork() - isDayLightSaving(model.getDate()) * 3600 * model.getClouds()), cubic)
-                .addParameter((model.getSunRiseBeforeWork() + isDayLightSaving(model.getDate()) * 3600 * model.getClouds()), cubic)
+                .addParameter(((model.getSunSetBeforeWork() - isDayLightSaving(model.getDate()) * 3600)* model.getClouds()), signedSquare)
+                .addParameter(((model.getSunRiseBeforeWork() + isDayLightSaving(model.getDate()) * 3600)* model.getClouds()), signedSquare)
+                .addParameter(((model.getSunSetBeforeWork() - isDayLightSaving(model.getDate()) * 3600)* model.getClouds()), cubic)
+                .addParameter(((model.getSunRiseBeforeWork() + isDayLightSaving(model.getDate()) * 3600)* model.getClouds()), cubic)
                 ;
     }
 
