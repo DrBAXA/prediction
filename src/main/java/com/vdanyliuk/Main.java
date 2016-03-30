@@ -40,7 +40,7 @@ public class Main {
 
         WeatherModel tomorrowData = forecastWeatherDataProvider.getData(tomorrow);
 
-        System.out.println(solver.solve(dataModel.weatherData.get(LocalDate.of(2015,3,29))));
+        System.out.println(solver.solve(tomorrowData));
     }
 
 }
