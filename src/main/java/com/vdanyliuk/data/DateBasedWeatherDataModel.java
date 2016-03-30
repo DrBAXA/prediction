@@ -28,7 +28,7 @@ public class DateBasedWeatherDataModel implements IndependentDataModel<WeatherMo
     private static final UnaryOperator<Double> sqrt = Math::sqrt;
 
     private transient WeatherDataProvider weatherDataProvider;
-    private Map<LocalDate, WeatherModel> weatherData;
+    public Map<LocalDate, WeatherModel> weatherData;
     private Map<LocalDate, Double> loadData;
 
     public DateBasedWeatherDataModel(WeatherDataProvider weatherDataProvider, LocalDate startDate, LocalDate endDate) throws IOException {
@@ -472,7 +472,7 @@ public class DateBasedWeatherDataModel implements IndependentDataModel<WeatherMo
         }
     }
 
-    public double isDayLightSaving(LocalDate date) {
+    public static double isDayLightSaving(LocalDate date) {
         return ZoneId.systemDefault().getRules().isDaylightSavings(Instant.from(date.atTime(LocalTime.MIDNIGHT).atOffset(ZoneOffset.UTC))) ? 1 : 0;
     }
 

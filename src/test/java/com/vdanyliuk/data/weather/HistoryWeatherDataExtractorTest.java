@@ -1,5 +1,6 @@
 package com.vdanyliuk.data.weather;
 
+import com.vdanyliuk.data.weather.historical.HistoryWeatherDataExtractor;
 import org.junit.Before;
 
 public class HistoryWeatherDataExtractorTest {
@@ -24,7 +25,7 @@ public class HistoryWeatherDataExtractorTest {
 
     @Before
     public void setUp() throws Exception {
-        extractor = new HistoryWeatherDataExtractor(WUndergroundWeatherDataProviderTest.DOCUMENT, WUndergroundWeatherDataProviderTest.TEST_DATE);
+        extractor = new HistoryWeatherDataExtractor(HistoricalWeatherDataProviderTest.DOCUMENT, HistoricalWeatherDataProviderTest.TEST_DATE);
     }
 
 /*    @Test

@@ -1,4 +1,4 @@
-package com.vdanyliuk.data.astronomical;
+package com.vdanyliuk.data.weather.forecast.astronomical;
 
 import com.vdanyliuk.data.DataProvider;
 

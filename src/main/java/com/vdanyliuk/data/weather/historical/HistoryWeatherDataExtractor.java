@@ -1,5 +1,6 @@
-package com.vdanyliuk.data.weather;
+package com.vdanyliuk.data.weather.historical;
 
+import com.vdanyliuk.data.weather.WeatherModel;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.nodes.Document;
 

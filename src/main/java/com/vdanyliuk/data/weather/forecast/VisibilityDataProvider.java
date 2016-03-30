@@ -1,4 +1,4 @@
-package com.vdanyliuk.data.weather;
+package com.vdanyliuk.data.weather.forecast;
 
 import com.vdanyliuk.data.DataProvider;
 import lombok.extern.slf4j.Slf4j;

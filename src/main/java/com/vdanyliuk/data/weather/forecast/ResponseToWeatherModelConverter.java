@@ -1,7 +1,7 @@
-package com.vdanyliuk.data.weather.api;
+package com.vdanyliuk.data.weather.forecast;
 
 import com.vdanyliuk.data.DataProvider;
-import com.vdanyliuk.data.astronomical.AstronomyData;
+import com.vdanyliuk.data.weather.forecast.astronomical.AstronomyData;
 import com.vdanyliuk.data.weather.WeatherModel;
 
 import java.time.LocalDate;
@@ -12,15 +12,15 @@ import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.function.UnaryOperator;
 
-public class APIResponseToWeatherModelConverter {
+public class ResponseToWeatherModelConverter {
 
     private DataProvider<AstronomyData> astronomyDataDataProvider;
     private DataProvider<Double> visibilityDataProvider;
 
 
-    private UnaryOperator<Double> FARENGATE_TO_CELSIUS = f -> (f-32)/1.8;
+    private UnaryOperator<Double> FAHRENHEIT_TO_CELSIUS = f -> (f-32)/1.8;
 
-    public APIResponseToWeatherModelConverter(DataProvider<AstronomyData> astronomyDataDataProvider, DataProvider<Double> visibilityDataProvider) {
+    public ResponseToWeatherModelConverter(DataProvider<AstronomyData> astronomyDataDataProvider, DataProvider<Double> visibilityDataProvider) {
         this.astronomyDataDataProvider = astronomyDataDataProvider;
         this.visibilityDataProvider = visibilityDataProvider;
     }
@@ -39,16 +39,16 @@ public class APIResponseToWeatherModelConverter {
 
                 .date(date)
 
-                .avgTemperature(FARENGATE_TO_CELSIUS.apply(weather.getTemperature()))
-                .minTemperature(FARENGATE_TO_CELSIUS.apply(averager.getMinTemperature()))
-                .maxTemperature(FARENGATE_TO_CELSIUS.apply(averager.getMaxTemperature()))
+                .avgTemperature(FAHRENHEIT_TO_CELSIUS.apply(weather.getTemperature()))
+                .minTemperature(FAHRENHEIT_TO_CELSIUS.apply(averager.getMinTemperature()))
+                .maxTemperature(FAHRENHEIT_TO_CELSIUS.apply(averager.getMaxTemperature()))
 
                 .avgHumidity(weather.getHumidity()*100)
                 .minHumidity(averager.getMinHumidity()*100)
                 .maxHumidity(averager.getMaxHumidity()*100)
 
                 .clouds(weather.getClouds()*100)
-                .dewPoint(weather.getDewPoint())
+                .dewPoint(FAHRENHEIT_TO_CELSIUS.apply(weather.getDewPoint()))
                 .pressure(weather.getPressure())
                 .precipitation(weather.getPerception())
                 .visibility(visibilityDataProvider.getData(date))

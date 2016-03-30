@@ -1,22 +1,24 @@
-package com.vdanyliuk.data.weather;
+package com.vdanyliuk.data.weather.historical;
 
+import com.vdanyliuk.data.Cache;
+import com.vdanyliuk.data.weather.WeatherDataProvider;
+import com.vdanyliuk.data.weather.WeatherModel;
 import com.vdanyliuk.util.Average;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
-import java.io.*;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 @Slf4j
-public class WUndergroundWeatherDataProvider implements WeatherDataProvider {
+public class HistoricalWeatherDataProvider extends Cache<LocalDate, WeatherModel> implements WeatherDataProvider {
 
     public static final DateTimeFormatter F2 = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
@@ -24,44 +26,18 @@ public class WUndergroundWeatherDataProvider implements WeatherDataProvider {
     private final static String DEFAULT_URL = "http://ukrainian.wunderground.com/history/airport/UKLI/${Date}/DailyHistory.html";
 
     private Map<LocalDate, Double> clouds;
-    Map<LocalDate, WeatherModel> cache;
 
-    public WUndergroundWeatherDataProvider() throws IOException {
-        this.clouds = getCloudsData();
-        cache = loadCache();
+
+    protected HistoricalWeatherDataProvider() throws IOException {
+        clouds = getCloudsData();
     }
 
     @Override
-    public WeatherModel getData(LocalDate date) {
-        return Optional.ofNullable(cache.get(date))
-                .orElseGet(() ->getWeather(getWeatherDayPage(date), date));
+    protected WeatherModel getNonCachedData(LocalDate date) {
+        log.info("Loading data for " + date.toString());
+        return getWeather(getWeatherDayPage(date), date);
     }
 
-    private void saveCache(Map<LocalDate, WeatherModel> cache) {
-        try (OutputStream outputStream = new FileOutputStream("data/cache.dat");
-             ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream)) {
-
-            this.cache.putAll(cache);
-            objectOutputStream.writeObject(this.cache);
-
-        } catch (IOException e) {
-            log.error("Can't save cache.");
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private Map<LocalDate, WeatherModel> loadCache() {
-        try (InputStream inputStream = new FileInputStream("data/cache.dat");
-             ObjectInputStream objectInputStream = new ObjectInputStream(inputStream)) {
-
-            Map<LocalDate, WeatherModel> res = (Map<LocalDate, WeatherModel>) objectInputStream.readObject();
-            return Optional.ofNullable(res).orElseGet(HashMap::new);
-
-        } catch (IOException | ClassNotFoundException e) {
-            log.error("Can't load cache.");
-            return new HashMap<>();
-        }
-    }
 
     Document getWeatherDayPage(LocalDate date) {
         return getWeatherDayPage(date, 0);

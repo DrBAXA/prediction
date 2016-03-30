@@ -1,4 +1,4 @@
-package com.vdanyliuk.data.astronomical;
+package com.vdanyliuk.data.weather.forecast.astronomical;
 
 import junit.framework.TestCase;
 import org.junit.Before;

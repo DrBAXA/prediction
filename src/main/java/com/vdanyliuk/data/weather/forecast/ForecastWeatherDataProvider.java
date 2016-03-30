@@ -1,15 +1,13 @@
-package com.vdanyliuk.data.weather;
+package com.vdanyliuk.data.weather.forecast;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.vdanyliuk.data.Cache;
 import com.vdanyliuk.data.DataProvider;
-import com.vdanyliuk.data.astronomical.AstronomyData;
-import com.vdanyliuk.data.astronomical.StoredAstronomicalDataProvider;
-import com.vdanyliuk.data.weather.api.APIResponseToWeatherModelConverter;
-import com.vdanyliuk.data.weather.api.HourlyWeather;
+import com.vdanyliuk.data.weather.forecast.astronomical.AstronomyData;
+import com.vdanyliuk.data.weather.WeatherDataProvider;
+import com.vdanyliuk.data.weather.WeatherModel;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
@@ -23,25 +21,17 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 @Slf4j
-public class ForecastWeatherDataExtractor implements WeatherDataProvider{
+public class ForecastWeatherDataProvider implements WeatherDataProvider {
 
     private static final String URL = "https://api.forecast.io/forecast/80670f9deea5e66cd05bc243c5792921/48.9131692,24.7025118";
 
-    private APIResponseToWeatherModelConverter modelConverter;
+    private ResponseToWeatherModelConverter modelConverter;
     private ObjectMapper mapper;
 
-    public ForecastWeatherDataExtractor(DataProvider<AstronomyData> astronomyDataProvider, DataProvider<Double> visibilityDataProvider) {
-        modelConverter = new APIResponseToWeatherModelConverter(astronomyDataProvider, visibilityDataProvider);
+    public ForecastWeatherDataProvider(DataProvider<AstronomyData> astronomyDataProvider, DataProvider<Double> visibilityDataProvider) {
+        modelConverter = new ResponseToWeatherModelConverter(astronomyDataProvider, visibilityDataProvider);
         mapper = new ObjectMapper();
     }
-
-    public static void main(String[] args) {
-        DataProvider<AstronomyData> astronomyDataDataProvider = Cache.load("data/astronomy.dat", StoredAstronomicalDataProvider.class);
-        DataProvider<Double>  visibilityDataProvider = new VisibilityDataProvider();
-        ForecastWeatherDataExtractor dataExtractor = new ForecastWeatherDataExtractor(astronomyDataDataProvider, visibilityDataProvider);
-        System.out.println(dataExtractor.getData(LocalDate.now().plusDays(1)));
-    }
-
 
     @Override
     public WeatherModel getData(LocalDate date) {

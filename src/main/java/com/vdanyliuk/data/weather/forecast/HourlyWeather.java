@@ -1,4 +1,4 @@
-package com.vdanyliuk.data.weather.api;
+package com.vdanyliuk.data.weather.forecast;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -98,7 +98,7 @@ public class HourlyWeather {
             double maxPerception = averager.maxPerception > weather.getPerception()  && averager.count > 0 ? averager.maxPerception : weather.getPerception();
 
             long minTimestamp = averager.minTimestamp < weather.getTimestamp()  && averager.count > 0 ? averager.minTimestamp : weather.getTimestamp();
-            double minTemperature = averager.minTemperature < weather.getTemperature() ? averager.minTemperature : weather.getTemperature();
+            double minTemperature = averager.minTemperature < weather.getTemperature() && averager.count > 0 ? averager.minTemperature : weather.getTemperature();
             double minDewPoint = averager.minDewPoint < weather.getDewPoint()  && averager.count > 0 ? averager.minDewPoint : weather.getDewPoint();
             double minHumidity = averager.minHumidity < weather.getHumidity()  && averager.count > 0 ? averager.minHumidity : weather.getHumidity();
             double minPressure = averager.minPressure < weather.getPressure()  && averager.count > 0 ? averager.minPressure : weather.getPressure();
