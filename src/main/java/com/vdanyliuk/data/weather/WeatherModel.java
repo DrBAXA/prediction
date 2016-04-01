@@ -11,6 +11,8 @@ import java.time.format.DateTimeFormatter;
 @Builder
 public class WeatherModel implements Serializable{
 
+    private static final long serialVersionUID = 1L;
+
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy.MM.dd");
     private LocalDate date;
 
@@ -39,25 +41,4 @@ public class WeatherModel implements Serializable{
     private double sunSetBeforeWork;
 
     private double clouds;
-
-    @Override
-    public String toString() {
-        return        FORMATTER.format(date) +
-                "," + avgTemperature +
-                "," + minTemperature +
-                "," + maxTemperature +
-                "," + dewPoint +
-                "," + avgHumidity +
-                "," + maxHumidity +
-                "," + minHumidity +
-                "," + precipitation +
-                "," + pressure +
-                "," + wind +
-                "," + visibility +
-                "," + astronomicalDayLong +
-                "," + dayLightLong +
-                "," + sunRiseBeforeWork +
-                "," + sunSetBeforeWork +
-                "," + clouds;
-    }
 }

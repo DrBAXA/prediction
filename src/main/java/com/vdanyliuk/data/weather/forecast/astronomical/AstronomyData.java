@@ -11,6 +11,8 @@ import java.time.LocalTime;
 @Builder
 public class AstronomyData implements Serializable{
 
+    private static final long serialVersionUID = 1L;
+
     private LocalDate date;
 
     private double astronomicalDayLong;

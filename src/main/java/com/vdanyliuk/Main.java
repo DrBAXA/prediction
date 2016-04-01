@@ -6,7 +6,7 @@ import com.vdanyliuk.data.weather.WeatherModel;
 import com.vdanyliuk.data.weather.forecast.ForecastWeatherDataProvider;
 import com.vdanyliuk.data.weather.forecast.VisibilityDataProvider;
 import com.vdanyliuk.data.weather.forecast.astronomical.AstronomyData;
-import com.vdanyliuk.data.weather.forecast.astronomical.StoredAstronomicalDataProvider;
+import com.vdanyliuk.data.weather.forecast.astronomical.AstronomicalDataProvider;
 import com.vdanyliuk.data.weather.historical.CloudsDataProvider;
 import com.vdanyliuk.data.weather.historical.HistoricalWeatherDataProvider;
 import com.vdanyliuk.solver.EnergyLoadWeatherSolver;
@@ -34,10 +34,10 @@ public class Main {
 
     public Main(String... args) {
         parseCommandLine(args);
-        cloudsDataProvider = Cache.load("data/clouds.cache", CloudsDataProvider.class);
+        cloudsDataProvider = new CloudsDataProvider();
         historicalWeatherDataProvider = Cache.load("data/historycalWeatherData.cache", HistoricalWeatherDataProvider.class, cloudsDataProvider);
-        astronomyDataProvider = Cache.load("data/astronomy.dat", StoredAstronomicalDataProvider.class);
-        visibilityDataProvider = Cache.load("data/visibility.cache", VisibilityDataProvider.class);
+        astronomyDataProvider = new AstronomicalDataProvider();
+        visibilityDataProvider = new VisibilityDataProvider();
         forecastWeatherDataProvider = Cache.load("data/forecastData.cache", ForecastWeatherDataProvider.class, astronomyDataProvider, visibilityDataProvider);
     }
 
@@ -71,7 +71,6 @@ public class Main {
         DateBasedWeatherDataModel dataModel = new DateBasedWeatherDataModel(historicalWeatherDataProvider,
                 LocalDate.of(2015, 3, 1),
                 LocalDate.now());
-        cloudsDataProvider.store("data/clouds.cache");
         historicalWeatherDataProvider.store("data/historycalWeatherData.cache");
 
         RegressionSolver<WeatherModel> solver = new EnergyLoadWeatherSolver(dataModel, dataModel, getDebugMode());
@@ -91,8 +90,6 @@ public class Main {
             model = forecastWeatherDataProvider.getData(date);
         }
 
-        astronomyDataProvider.store("data/astronomy.dat");
-        visibilityDataProvider.store("data/visibility.cache");
         forecastWeatherDataProvider.store("data/forecastData.cache");
 
         return model;

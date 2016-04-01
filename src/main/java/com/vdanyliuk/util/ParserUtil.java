@@ -14,13 +14,17 @@ import java.util.regex.Pattern;
 
 @Slf4j
 public class ParserUtil {
-
-    public static Document getDocument(String url) {
+    public static Document getDocument(String url, int tryCount) {
         try {
             return Jsoup.connect(url).get();
         } catch (IOException e) {
-            log.error("Can't get page " + url);
-            return null;
+            if (tryCount < 5) {
+                log.warn("Can't get page " + url + ". Try to get one more time");
+                return getDocument(url, tryCount + 1);
+            } else {
+                log.error("Reached try cont limit.");
+                throw new RuntimeException("Can't load data from internet");
+            }
         }
     }
 

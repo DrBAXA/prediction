@@ -23,7 +23,7 @@ import java.util.stream.StreamSupport;
 @Slf4j
 public class ForecastWeatherDataProvider extends Cache<LocalDate, WeatherModel> {
 
-    private static final long serialVersionUID = 2L;
+    private static final long serialVersionUID = 1L;
 
     private static final String URL = "https://api.forecast.io/forecast/80670f9deea5e66cd05bc243c5792921/48.9131692,24.7025118";
 

@@ -14,6 +14,8 @@ import java.util.stream.Stream;
 @Slf4j
 public abstract class Cache<K, V> implements DataProvider<V>, Serializable{
 
+    private static final long serialVersionUID = 1L;
+
     protected Map<K, V> cache;
 
     public Cache() {
@@ -55,7 +57,7 @@ public abstract class Cache<K, V> implements DataProvider<V>, Serializable{
             return (T) objectInputStream.readObject();
 
         } catch (IOException | ClassNotFoundException e) {
-            log.error("Can't load cache.");
+            log.warn("Can't load cache. Data will be loaded from network.");
             try {
                 Constructor<? extends T> constructor = (Constructor<? extends T>) Stream.of(cacheClass.getDeclaredConstructors())
                         .filter(c -> c.getParameterCount() == args.length)
