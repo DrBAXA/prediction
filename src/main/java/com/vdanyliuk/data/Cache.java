@@ -9,11 +9,12 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 @Slf4j
-public abstract class Cache<K, V> implements Serializable{
+public abstract class Cache<K, V> implements DataProvider<V>, Serializable{
 
-    Map<K, V> cache;
+    protected Map<K, V> cache;
 
     public Cache() {
         cache = new HashMap<>();
@@ -46,7 +47,8 @@ public abstract class Cache<K, V> implements Serializable{
         }
     }
 
-    public static <T extends Cache> T load(@NonNull String fileName, Class<? extends T> cacheClass){
+    @SuppressWarnings("unchecked")
+    public static <T extends Cache> T load(@NonNull String fileName, Class<? extends T> cacheClass, Object... args){
         try (InputStream inputStream = new FileInputStream(fileName);
              ObjectInputStream objectInputStream = new ObjectInputStream(inputStream)) {
 
@@ -55,10 +57,14 @@ public abstract class Cache<K, V> implements Serializable{
         } catch (IOException | ClassNotFoundException e) {
             log.error("Can't load cache.");
             try {
-                Constructor<? extends T> constructor = cacheClass.getDeclaredConstructor();
+                Constructor<? extends T> constructor = (Constructor<? extends T>) Stream.of(cacheClass.getDeclaredConstructors())
+                        .filter(c -> c.getParameterCount() == args.length)
+                        .findAny()
+                        .get();
+
                 constructor.setAccessible(true);
-                return constructor.newInstance();
-            } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException ignored) {
+                return constructor.newInstance(args);
+            } catch (InstantiationException | IllegalAccessException | InvocationTargetException ignored) {
                 throw new RuntimeException(ignored);
             }
         }

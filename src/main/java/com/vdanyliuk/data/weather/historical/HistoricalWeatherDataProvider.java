@@ -1,36 +1,31 @@
 package com.vdanyliuk.data.weather.historical;
 
 import com.vdanyliuk.data.Cache;
+import com.vdanyliuk.data.DataProvider;
 import com.vdanyliuk.data.weather.WeatherDataProvider;
 import com.vdanyliuk.data.weather.WeatherModel;
-import com.vdanyliuk.util.Average;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.Map;
 
 @Slf4j
 public class HistoricalWeatherDataProvider extends Cache<LocalDate, WeatherModel> implements WeatherDataProvider {
 
-    public static final DateTimeFormatter F2 = DateTimeFormatter.ofPattern("dd.MM.yyyy");
-
     private final static DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy/MM/dd");
     private final static String DEFAULT_URL = "http://ukrainian.wunderground.com/history/airport/UKLI/${Date}/DailyHistory.html";
 
-    private Map<LocalDate, Double> clouds;
+    private DataProvider<Double> clouds;
 
 
-    protected HistoricalWeatherDataProvider() throws IOException {
-        clouds = getCloudsData();
+    protected HistoricalWeatherDataProvider(DataProvider<Double> clouds) throws IOException {
+        this.clouds = clouds;
     }
+
 
     @Override
     protected WeatherModel getNonCachedData(LocalDate date) {
@@ -65,19 +60,5 @@ public class HistoricalWeatherDataProvider extends Cache<LocalDate, WeatherModel
 
     String getUrlWithDate(String urlPattern, LocalDate date) {
         return urlPattern.replace("${Date}", DATE_FORMATTER.format(date));
-    }
-
-    private static Map<LocalDate, Double> getCloudsData() throws IOException {
-        Map<LocalDate, Average> clouds = new HashMap<>();
-        Files.lines(Paths.get("data/clouds.csv"))
-                .map(l -> l.split(";"))
-                .forEach(a -> clouds.compute(LocalDate.parse(a[0], F2),
-                        (d, av) -> av == null ? new Average() : av.add(Double.parseDouble(a[1]))));
-
-        return clouds.entrySet()
-                .stream()
-                .collect(HashMap::new,
-                        (m, e) -> m.put(e.getKey(), e.getValue().get()),
-                        HashMap::putAll);
     }
 }

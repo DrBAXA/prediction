@@ -1,5 +1,6 @@
 package com.vdanyliuk.data.weather.historical;
 
+import com.vdanyliuk.data.DataProvider;
 import com.vdanyliuk.data.weather.WeatherModel;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.nodes.Document;
@@ -7,7 +8,6 @@ import org.jsoup.nodes.Document;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Map;
 
 import static com.vdanyliuk.util.ParserUtil.*;
 
@@ -22,7 +22,7 @@ public class HistoryWeatherDataExtractor {
         this.date = date;
     }
 
-    public WeatherModel getWeather(Map<LocalDate, Double> clouds) {
+    public WeatherModel getWeather(DataProvider<Double> clouds) {
         return WeatherModel.builder()
                 .date(date)
                 .astronomicalDayLong(getAstronomicalDayLong())
@@ -40,18 +40,18 @@ public class HistoryWeatherDataExtractor {
                 .visibility(getVisibility())
                 .sunRiseBeforeWork(getSunRiseBeforeWork())
                 .sunSetBeforeWork(getSunSetBeforeWork())
-                .clouds(clouds.get(date))
+                .clouds(clouds.getData(date))
                 .build();
     }
 
     double getSunRiseBeforeWork() {
         LocalTime sunRise = getTimeValueForCssAndRegex(document, "div#astronomy-mod.wx-module.simple table tbody tr", "Фактичний час\\s+(\\d{2}:\\d{2})");
-        return ChronoUnit.SECONDS.between(sunRise, LocalTime.of(6,30));
+        return ChronoUnit.MINUTES.between(sunRise, LocalTime.of(6,30));
     }
 
     double getSunSetBeforeWork() {
         LocalTime sunSet = getTimeValueForCssAndRegex(document, "div#astronomy-mod.wx-module.simple table tbody tr", "Фактичний час.*\\s+(\\d{2}:\\d{2})\\s+EES?T Цивільні Сутінки");
-        return ChronoUnit.SECONDS.between( LocalTime.of(20,0), sunSet);
+        return ChronoUnit.MINUTES.between( LocalTime.of(20,0), sunSet);
     }
 
     double getAstronomicalDayLong() {

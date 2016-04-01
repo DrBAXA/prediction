@@ -13,6 +13,8 @@ import java.time.temporal.ChronoUnit;
 
 public class StoredAstronomicalDataProvider extends Cache<LocalDate, AstronomyData> implements AstronomicalDataProvider {
 
+    private static final long serialVersionUID = 1L;
+
     private static final String URL = "http://ua.365.wiki/world/ukraine/ivano-frankivsk/sun/today/";
 
     @Override

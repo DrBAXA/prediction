@@ -19,6 +19,7 @@ public class ResponseToWeatherModelConverter {
 
 
     private UnaryOperator<Double> FAHRENHEIT_TO_CELSIUS = f -> (f-32)/1.8;
+    private UnaryOperator<Double> MILE_TO_KM = m -> (m)/1.609344;
 
     public ResponseToWeatherModelConverter(DataProvider<AstronomyData> astronomyDataDataProvider, DataProvider<Double> visibilityDataProvider) {
         this.astronomyDataDataProvider = astronomyDataDataProvider;
@@ -52,12 +53,12 @@ public class ResponseToWeatherModelConverter {
                 .pressure(weather.getPressure())
                 .precipitation(weather.getPerception())
                 .visibility(visibilityDataProvider.getData(date))
-                .wind(weather.getWind())
+                .wind(MILE_TO_KM.apply(weather.getWind()))
 
                 .astronomicalDayLong(astronomyData.getAstronomicalDayLong())
                 .dayLightLong(astronomyData.getDayLightLong())
-                .sunRiseBeforeWork(ChronoUnit.SECONDS.between(astronomyData.getSunRise(), LocalTime.of(6,30)))
-                .sunSetBeforeWork(ChronoUnit.SECONDS.between(LocalTime.of(20,0), astronomyData.getSunSet()))
+                .sunRiseBeforeWork(ChronoUnit.MINUTES.between(astronomyData.getSunRise(), LocalTime.of(6,30)))
+                .sunSetBeforeWork(ChronoUnit.MINUTES.between(LocalTime.of(20,0), astronomyData.getSunSet()))
 
                 .build();
 

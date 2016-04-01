@@ -4,10 +4,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.vdanyliuk.data.Cache;
 import com.vdanyliuk.data.DataProvider;
-import com.vdanyliuk.data.weather.forecast.astronomical.AstronomyData;
-import com.vdanyliuk.data.weather.WeatherDataProvider;
 import com.vdanyliuk.data.weather.WeatherModel;
+import com.vdanyliuk.data.weather.forecast.astronomical.AstronomyData;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
@@ -21,20 +21,31 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 @Slf4j
-public class ForecastWeatherDataProvider implements WeatherDataProvider {
+public class ForecastWeatherDataProvider extends Cache<LocalDate, WeatherModel> {
+
+    private static final long serialVersionUID = 2L;
 
     private static final String URL = "https://api.forecast.io/forecast/80670f9deea5e66cd05bc243c5792921/48.9131692,24.7025118";
 
-    private ResponseToWeatherModelConverter modelConverter;
-    private ObjectMapper mapper;
+    private transient ResponseToWeatherModelConverter modelConverter;
+    private static final ObjectMapper mapper  =new ObjectMapper();;
+    private DataProvider<AstronomyData> astronomyDataProvider;
+    private DataProvider<Double> visibilityDataProvider;
 
     public ForecastWeatherDataProvider(DataProvider<AstronomyData> astronomyDataProvider, DataProvider<Double> visibilityDataProvider) {
+        this.astronomyDataProvider = astronomyDataProvider;
+        this.visibilityDataProvider = visibilityDataProvider;
         modelConverter = new ResponseToWeatherModelConverter(astronomyDataProvider, visibilityDataProvider);
-        mapper = new ObjectMapper();
+    }
+
+    private void readObject(java.io.ObjectInputStream in)
+            throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        modelConverter = new ResponseToWeatherModelConverter(astronomyDataProvider, visibilityDataProvider);
     }
 
     @Override
-    public WeatherModel getData(LocalDate date) {
+    protected WeatherModel getNonCachedData(LocalDate date) {
         return modelConverter.convert(getHourlyWeather(date));
     }
 
@@ -44,6 +55,12 @@ public class ForecastWeatherDataProvider implements WeatherDataProvider {
         JsonNode hourlyDataWrapper = response.findValue("hourly");
 
         ArrayNode hourlyData = (ArrayNode) hourlyDataWrapper.findValue("data");
+
+        StreamSupport.stream(hourlyData.spliterator(),false)
+                .map(n -> n.findValue("time"))
+                .map(JsonNode::asLong)
+                .map(l -> LocalDateTime.ofEpochSecond(l, 0, ZoneOffset.UTC))
+                .forEach(System.out::println);
 
         return StreamSupport
                 .stream(hourlyData.spliterator(), false)
