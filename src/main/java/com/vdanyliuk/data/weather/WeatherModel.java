@@ -41,4 +41,16 @@ public class WeatherModel implements Serializable{
     private double sunSetBeforeWork;
 
     private double clouds;
+
+    public double getAvgTemperature() {
+        return avgTemperature + 273.15;
+    }
+
+    public double getMinTemperature() {
+        return minTemperature + 273.15;
+    }
+
+    public double getMaxTemperature() {
+        return maxTemperature + 273.15;
+    }
 }

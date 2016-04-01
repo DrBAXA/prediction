@@ -36,7 +36,7 @@ public class EnergyLoadWeatherSolver implements RegressionSolver<WeatherModel> {
 
 
         //(X^T*X+l*R)*X*y result column vector with rowsCount "n"
-        RealMatrix theta = new LUDecomposition((X.transpose().multiply(X)).add(R.scalarMultiply(1000000))).getSolver().getInverse().multiply(X.transpose()).multiply(y);
+        RealMatrix theta = new LUDecomposition((X.transpose().multiply(X)).add(R.scalarMultiply(0))).getSolver().getInverse().multiply(X.transpose()).multiply(y);
 
         RealMatrix xy = X.multiply(theta).scalarAdd(v);
         RealMatrix dy = xy.add(y.scalarMultiply(-1).scalarAdd(v));

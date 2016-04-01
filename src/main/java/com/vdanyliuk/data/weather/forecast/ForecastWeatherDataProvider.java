@@ -56,12 +56,6 @@ public class ForecastWeatherDataProvider extends Cache<LocalDate, WeatherModel> 
 
         ArrayNode hourlyData = (ArrayNode) hourlyDataWrapper.findValue("data");
 
-        StreamSupport.stream(hourlyData.spliterator(),false)
-                .map(n -> n.findValue("time"))
-                .map(JsonNode::asLong)
-                .map(l -> LocalDateTime.ofEpochSecond(l, 0, ZoneOffset.UTC))
-                .forEach(System.out::println);
-
         return StreamSupport
                 .stream(hourlyData.spliterator(), false)
                 .map(getNodeToPOJOMapper(mapper, HourlyWeather.class))

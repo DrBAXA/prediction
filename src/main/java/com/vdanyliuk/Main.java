@@ -1,7 +1,9 @@
 package com.vdanyliuk;
 
 import com.vdanyliuk.data.Cache;
+import com.vdanyliuk.data.DataProvider;
 import com.vdanyliuk.data.DateBasedWeatherDataModel;
+import com.vdanyliuk.data.load.LoadDataProvider;
 import com.vdanyliuk.data.weather.WeatherModel;
 import com.vdanyliuk.data.weather.forecast.ForecastWeatherDataProvider;
 import com.vdanyliuk.data.weather.forecast.VisibilityDataProvider;
@@ -21,24 +23,30 @@ public class Main {
 
     private CommandLine commandLine;
 
-    Cache<LocalDate, Double> cloudsDataProvider;
-    Cache<LocalDate, AstronomyData> astronomyDataProvider;
-    Cache<LocalDate, Double> visibilityDataProvider;
-    HistoricalWeatherDataProvider historicalWeatherDataProvider;
-    ForecastWeatherDataProvider forecastWeatherDataProvider;
+    private Cache<LocalDate, Double> cloudsDataProvider;
+    private Cache<LocalDate, AstronomyData> astronomyDataProvider;
+
+    private Cache<LocalDate, Double> visibilityDataProvider;
+    private HistoricalWeatherDataProvider historicalWeatherDataProvider;
+    private ForecastWeatherDataProvider forecastWeatherDataProvider;
+
+    private DataProvider<Double> loadDataProvider;
 
     public static void main(String[] args) throws IOException, ParseException {
         Main app = new Main(args);
         app.predict();
     }
 
-    public Main(String... args) {
+    public Main(String... args) throws IOException {
         parseCommandLine(args);
         cloudsDataProvider = new CloudsDataProvider();
         historicalWeatherDataProvider = Cache.load("data/historycalWeatherData.cache", HistoricalWeatherDataProvider.class, cloudsDataProvider);
+
         astronomyDataProvider = new AstronomicalDataProvider();
         visibilityDataProvider = new VisibilityDataProvider();
         forecastWeatherDataProvider = Cache.load("data/forecastData.cache", ForecastWeatherDataProvider.class, astronomyDataProvider, visibilityDataProvider);
+
+        loadDataProvider = new LoadDataProvider("data/load.csv");
     }
 
     private boolean getDebugMode() {
@@ -68,7 +76,7 @@ public class Main {
     }
 
     public void predict() throws IOException {
-        DateBasedWeatherDataModel dataModel = new DateBasedWeatherDataModel(historicalWeatherDataProvider,
+        DateBasedWeatherDataModel dataModel = new DateBasedWeatherDataModel(historicalWeatherDataProvider, loadDataProvider,
                 LocalDate.of(2015, 3, 1),
                 LocalDate.now());
         historicalWeatherDataProvider.store("data/historycalWeatherData.cache");
@@ -77,9 +85,7 @@ public class Main {
 
         WeatherModel predictionData = getPredictionData(getDate());
 
-
-
-        System.out.println(solver.solve(predictionData));
+        System.out.println("Predicted energy consumption on " + getDate() + " " + solver.solve(predictionData));
     }
 
     private WeatherModel getPredictionData(LocalDate date) {
